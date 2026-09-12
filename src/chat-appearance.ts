@@ -45,8 +45,8 @@ export const defaultChatAppearance: ChatAppearance = {
 
 export const chatNumberRanges: { key: 'width' | 'height' | 'characterHeight' | 'fontSize' | 'lineHeight' | 'letterSpacing' | 'glyphWidth'; label: string; min: number; max: number; step: number; unit: string; displayScale?: number }[] = [
   { key: 'width', label: '채팅창 너비', min: 280, max: 720, step: 1, unit: 'px' },
-  { key: 'height', label: '채팅창 높이', min: 200, max: 620, step: 1, unit: 'px' },
-  { key: 'characterHeight', label: '캐릭터 영역 높이', min: 160, max: 720, step: 1, unit: 'px' },
+  { key: 'height', label: '채팅창 높이', min: 200, max: 2000, step: 1, unit: 'px' },
+  { key: 'characterHeight', label: '캐릭터 영역 높이', min: 160, max: 2000, step: 1, unit: 'px' },
   { key: 'fontSize', label: '채팅 글자 크기', min: 9, max: 24, step: 1, unit: 'px' },
   { key: 'lineHeight', label: '줄 간격', min: 1, max: 3, step: 0.01, unit: '%', displayScale: 100 },
   { key: 'letterSpacing', label: '자간', min: -1, max: 5, step: 0.1, unit: 'px' },

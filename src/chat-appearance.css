@@ -26,8 +26,8 @@ main .companion-shell .message-content{font-size:var(--mate-chat-font-size);line
 main .companion-shell .send-button{background:var(--mate-chat-accent)}
 main .companion-shell .bubble-tail{background:var(--mate-chat-surface);border-color:var(--mate-chat-border)}
 main .companion-shell .collapsed-chat{font-family:var(--mate-chat-font),'PyeojinGothic','Segoe UI','Malgun Gothic',sans-serif;color:var(--mate-chat-accent);border-color:var(--mate-chat-border);background:var(--mate-chat-surface)}
-.desktop-host .companion-shell .chat-bubble{flex:0 1 var(--mate-chat-height)}
-.desktop-host .companion-shell .character-stage{flex:1 1 var(--mate-character-height);min-height:160px}
+.desktop-host .companion-shell .chat-bubble{flex:0 0 var(--mate-chat-height)}
+.desktop-host .companion-shell .character-stage{flex:0 0 var(--mate-character-height);min-height:160px}
 .preview-host .companion-shell .character-stage{flex:0 1 var(--mate-character-height)}
 
 /* Pyeojin Gothic is a static font, so horizontal scaling is applied to the

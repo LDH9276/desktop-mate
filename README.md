@@ -4,7 +4,7 @@
 
 [![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?logo=windows)](https://www.microsoft.com/windows/)
 [![Node.js](https://img.shields.io/badge/Node.js-22%20LTS-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
-[![Version](https://img.shields.io/badge/version-0.6.0-6b8559)](./package.json)
+[![Version](https://img.shields.io/badge/version-0.6.1-6b8559)](./package.json)
 
 Mate는 화면 위에 항상 떠 있는 작은 캐릭터와 미니 채팅창을 제공합니다. 별도의 API 키를 입력하는 방식이 아니라, 사용자가 Chrome에 열어 둔 **일반 ChatGPT 대화 하나**를 Windows 접근성 기능으로 연결합니다.
 
@@ -148,7 +148,7 @@ Mate는 계정 전체가 아니라 사용자가 지정한 **대화 하나에만*
 - 채팅 글자 크기와 글꼴
 - 채팅 배경, 테두리, 상단 영역, 입력창, 말풍선, 글자, 강조색
 
-기본 글꼴은 **펴진고딕**이며, 앱에 포함되어 인터넷이 없는 환경에서도 표시됩니다. 글꼴은 시스템 고딕이나 Consolas 고정폭 글꼴로 변경할 수 있습니다. 글자 크기, 줄 간격, 자간, 글자 가로 비율(장평)을 숫자로 직접 입력할 수 있고, 슬라이더는 1% 또는 1px 단위로 움직입니다. 창 배율을 100%보다 크게 해도 채팅 글자와 아이콘은 지나치게 확대되지 않습니다.
+기본 글꼴은 **펴진고딕**이며, 앱에 포함되어 인터넷이 없는 환경에서도 표시됩니다. 글꼴은 시스템 고딕이나 Consolas 고정폭 글꼴로 변경할 수 있습니다. 채팅창과 캐릭터 영역 높이는 각각 최대 2000px까지 직접 입력할 수 있습니다. 글자 크기, 줄 간격, 자간, 글자 가로 비율(장평)을 숫자로 직접 입력할 수 있고, 슬라이더는 1% 또는 1px 단위로 움직입니다. 창 배율을 100%보다 크게 해도 채팅 글자와 아이콘은 지나치게 확대되지 않습니다.
 
 ## 내 3D 모델 추가하기
 
