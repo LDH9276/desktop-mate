@@ -8,6 +8,7 @@ import { VmdBodyMotion, jointBlend } from './motion.mjs';
 import { clipFiles, createMotionClip, composeMotion } from './expressive-motion.mjs';
 import { createMmdRig, createMmdGrantUpdater, mmdRotation } from './motion-rig.mjs';
 import { createMmdPhysics, loadAmmo } from './mmd-physics.mjs';
+import { preserveMmdAlphaLayers } from './mmd-materials.mjs';
 import { createGltfRig, gltfRotation } from './gltf-rig.mjs';
 import { defaultAppearance, type Appearance } from './appearance';
 import { defaultOutline, type OutlineStyle } from './outline';
@@ -237,6 +238,7 @@ export function Avatar({ behavior, model, compact = false, paused = false, zoom 
       loader.load(model.url, mesh => {
         if (disposed) { disposeObject(mesh); return; }
         mmd = mesh;
+        preserveMmdAlphaLayers(Array.isArray(mesh.material) ? mesh.material : [mesh.material]);
         mmdBones = createMmdRig(mesh);
         grants = createMmdGrantUpdater(mesh);
         el.dataset.mmdGrants = String(grants.count);
