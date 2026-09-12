@@ -1,0 +1,30 @@
+MMD motion adaptations: CG-CA Gene
+CG-CA Gene (c) 2023 by Nagoya Institute of Technology,
+Moonshot R&D Goal 1 Avatar Symbiotic Society
+
+Source: https://github.com/mmdagent-ex/gene
+Revision: c7eace43dffaccff6ad0597433ef85fa57c91e03
+Original files (unmodified) from motion/: 02_laugh.vmd, 16_thinking.vmd,
+22_apology.vmd, 26_mortifying.vmd, 28_sleepy.vmd, 32_frustrated.vmd,
+34_sad.vmd, 38_Ashamed.vmd.
+License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+https://creativecommons.org/licenses/by/4.0/
+Source licensing statement:
+https://github.com/mmdagent-ex/gene/blob/c7eace43dffaccff6ad0597433ef85fa57c91e03/README.md#license
+
+Runtime adaptations in Mate:
+- Six added clips retain torso, shoulders, arms, elbows, wrists and fingers.
+  This includes thumb and distal finger tracks; Mate also adds relaxed finger
+  curls and per-joint follow-through when transitioning between poses.
+  Source rest-bone reference frames are derived from Gene_light.pmx and stored
+  in src/gene-rest.json, then retargeted to the selected VRM/PMX character.
+  The Gene model itself is not bundled.
+- Clips are excerpted, retimed to short reactions and crossfaded to neutral.
+  Original Bezier rotation interpolation is retained.
+- Apology and sleepy use only torso, neck and head rotations; apology uses
+  its first 90 frames. The other limbs use Mate's own animation.
+- Original face/accessory tracks and root translations are not applied.
+  Mate adds facial expressions, reaction anticipation/accents, body turns,
+  asymmetric leg poses, stomps, laughter pulses and foot-height correction.
+- These are edited character reactions, not verbatim playback of the source.
+No endorsement by the original creators is implied.

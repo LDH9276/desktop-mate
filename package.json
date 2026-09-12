@@ -1,0 +1,64 @@
+{
+  "name": "desktop-mate",
+  "version": "0.4.9",
+  "private": true,
+  "description": "A small VRM desktop companion",
+  "author": "Local",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build && node scripts/build-bridge.mjs && node scripts/make-icon.mjs",
+    "start": "npm run build && electron .",
+    "desktop": "electron .",
+    "test": "node --test tests/*.test.mjs",
+    "test:ui": "node scripts/smoke.mjs",
+    "test:lighting": "node scripts/test-lighting.mjs",
+    "test:chat-motion": "node scripts/test-chat-motion.mjs",
+    "test:cloth": "node scripts/test-physics-settings.mjs",
+    "package:win": "npm run build && electron-packager . DesktopMate --platform=win32 --arch=x64 --out=release --overwrite --no-asar --ignore=\"^/(release|portable-release|tests|scripts|src|local-only|.npm-cache|artifacts|.env)\" --win32metadata.ProductName=DesktopMate --win32metadata.FileDescription=\"Mate ChatGPT Desktop Companion\" --win32metadata.CompanyName=Local",
+    "package:portable": "npm run build && electron-builder --win portable"
+  },
+  "dependencies": {
+    "@pixiv/three-vrm": "^3.4.0",
+    "lucide-react": "^0.468.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "three": "0.169.0",
+    "unzipper": "0.12.5"
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.3.0",
+    "@playwright/test": "1.63.0",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/three": "0.169.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "electron": "^44.3.0",
+    "electron-builder": "^26.15.3",
+    "typescript": "^5.9.0",
+    "vite": "^7.1.0"
+  },
+  "build": {
+    "appId": "local.desktopmate",
+    "productName": "DesktopMate",
+    "asar": false,
+    "directories": {
+      "output": "portable-release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "native/ChatBridge.exe",
+      "assets/licenses/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "portable",
+      "artifactName": "DesktopMate-${version}-portable.${ext}"
+    }
+  }
+}

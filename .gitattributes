@@ -1,0 +1,4 @@
+*.wasm binary
+*.vmd binary
+*.png binary
+public/physics/ammo.wasm.js -text

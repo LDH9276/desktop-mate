@@ -1,0 +1,92 @@
+import { _electron as electron, expect } from '@playwright/test';
+import assert from 'node:assert/strict';
+import { mkdirSync, readFileSync, mkdtempSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { openSettingsWindow } from './settings-window.mjs';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const artifacts=path.join(root,'artifacts');
+mkdirSync(artifacts,{recursive:true});
+const testUserData=mkdtempSync(path.join(artifacts,'window-smoke-'));
+mkdirSync(testUserData,{recursive:true});
+const env={...process.env,MATE_TEST_USER_DATA:testUserData};delete env.ELECTRON_RUN_AS_NODE;
+let app=await electron.launch({args:[root],env,timeout:30000});
+try {
+  const page=await app.firstWindow();
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+  await page.waitForSelector('.avatar-renderer[data-loaded="true"]',{timeout:60000});
+  await page.waitForTimeout(1500);
+  assert.equal(await page.getByRole('button',{name:'메시지 보내기',exact:true}).isDisabled(),true);
+  assert.equal(await page.evaluate(()=>typeof window.mate?.send),'function');
+  assert.equal(await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].isAlwaysOnTop()),true);
+  assert.equal(await page.locator('.window-resize').count(),8);
+  let settings = await openSettingsWindow(app, page);
+  await settings.getByRole('button',{name:'창 크기 75%',exact:true}).dispatchEvent('click');
+  await expect.poll(()=>page.evaluate(async()=>Math.abs((await window.mate.windowState()).scale-0.75))).toBeLessThan(0.01);
+  await settings.getByRole('button',{name:'설정 닫기',exact:true}).dispatchEvent('click');
+  await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setPosition(100,100));
+  const before=await page.evaluate(()=>window.mate.windowState());
+  await page.getByRole('button',{name:'창 이동',exact:true}).dispatchEvent('keydown',{key:'ArrowDown',shiftKey:true});
+  await expect.poll(()=>page.evaluate(async()=>(await window.mate.windowState()).y)).toBe(before.y+50);
+  // Simulate cursor observations in this process only, never the physical cursor.
+  await app.evaluate(({screen})=>{
+    globalThis.mateOriginalCursor=screen.getCursorScreenPoint;
+    globalThis.mateTestCursor={x:450,y:650};
+    screen.getCursorScreenPoint=()=>globalThis.mateTestCursor;
+  });
+  const resizeStart=await page.evaluate(()=>window.mate.windowState());
+  // Synthetic events do not have an OS pointer to capture.
+  await page.locator('.window-resize-se').evaluate(node=>{node.setPointerCapture=()=>{};});
+  await page.locator('.window-resize-se').dispatchEvent('pointerdown',{button:0,pointerId:7});
+  await page.evaluate(()=>window.mate.windowState());
+  await app.evaluate(()=>{globalThis.mateTestCursor={x:570,y:710};});
+  await expect.poll(()=>page.evaluate(async expected=>Math.abs((await window.mate.windowState()).width-expected),resizeStart.width+120)).toBeLessThanOrEqual(1);
+  await page.locator('.window-resize-se').dispatchEvent('pointerup',{button:0,pointerId:7});
+  const resized=await page.evaluate(()=>window.mate.windowState());
+  console.log('Resize verification',JSON.stringify({resizeStart,resized,displays:await app.evaluate(({screen})=>screen.getAllDisplays().map(d=>d.workArea))}));
+  assert.ok(Math.abs(resized.height-resizeStart.height-60)<=1);
+  await app.evaluate(({screen})=>{screen.getCursorScreenPoint=globalThis.mateOriginalCursor;});
+  const layout=await page.evaluate(()=>({height:innerHeight,toolbar:document.querySelector('.mini-toolbar').getBoundingClientRect().toJSON(),bar:document.querySelector('.window-move-bar').getBoundingClientRect().toJSON()}));
+  assert.ok(layout.toolbar.bottom<=layout.height && layout.bar.top>=0);
+  await page.screenshot({path:path.join(artifacts,'companion.png'),omitBackground:true});
+  // DOM dispatch tests this app only and never moves the physical cursor.
+  await page.getByRole('button',{name:'쓰다듬기',exact:true}).dispatchEvent('click');
+  await page.waitForFunction(()=>document.querySelector('.character-stage')?.getAttribute('data-state')==='happy');
+  settings = await openSettingsWindow(app, page);
+  await settings.getByRole('group',{name:'모델 비율 프리셋'}).getByRole('button',{name:'슬림',exact:true}).dispatchEvent('click');
+  await page.waitForFunction(()=>JSON.parse(document.querySelector('.avatar-renderer').dataset.proportions).width===0.8);
+  assert.equal(await settings.getByRole('slider',{name:'세로 비율',exact:false}).inputValue(),'1.1');
+  await settings.screenshot({path:path.join(artifacts,'settings.png'),omitBackground:true});
+  await page.waitForSelector('.avatar-renderer[data-model="mate"][data-loaded="true"][data-model-license="DesktopMate-original"]');
+  await page.waitForFunction(()=>JSON.parse(document.querySelector('.avatar-renderer').dataset.proportions).width===0.8);
+  await settings.getByRole('button',{name:'설정 닫기',exact:true}).dispatchEvent('click');
+  await page.getByRole('button',{name:'채팅 접기',exact:true}).dispatchEvent('click');
+  assert.equal(await page.locator('.chat-bubble').count(),0);
+  await page.getByRole('button',{name:'ChatGPT 열기',exact:true}).dispatchEvent('click');
+  assert.equal(await page.locator('.chat-bubble').count(),1);
+  // Only call our own hide/show API. No external ChatGPT UI is touched.
+  await page.evaluate(()=>window.mate.hide());
+  const hidden=await app.evaluate(({BrowserWindow})=>!BrowserWindow.getAllWindows()[0].isVisible());
+  assert.equal(hidden,true);
+  await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].show());
+  assert.equal(await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].isAlwaysOnTop()),true);
+  await app.evaluate(async({BrowserWindow})=>{const other=new BrowserWindow({width:250,height:150,show:false});await other.loadURL('about:blank');other.show();other.focus();other.destroy();});
+  assert.equal(await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].isAlwaysOnTop()),true);
+  assert.deepEqual(errors,[]);
+  const saved=await page.evaluate(()=>window.mate.restoreWindow());
+  await app.evaluate(({app})=>app.quit()).catch(()=>{}); await app.close().catch(()=>{});
+  const persisted=JSON.parse(readFileSync(path.join(testUserData,'window-state.json'),'utf8'));
+  assert.equal(persisted.width,saved.width);assert.equal(persisted.y,saved.y);
+  app=await electron.launch({args:[root],env,timeout:30000});
+  const reopened=await app.firstWindow();
+  await reopened.waitForSelector('.avatar-renderer[data-loaded="true"]',{timeout:60000});
+  const restored=await reopened.evaluate(()=>window.mate.windowState());
+  console.log('Restart verification',JSON.stringify({saved,restored}));
+  for(const key of ['width','height','x','y']) assert.ok(Math.abs(restored[key]-saved[key])<=1,`restored ${key}`);
+  await reopened.waitForFunction(()=>JSON.parse(document.querySelector('.avatar-renderer').dataset.proportions).width===0.8);
+  await reopened.screenshot({path:path.join(artifacts,'window-controls.png'),omitBackground:true});
+  console.log('UI smoke passed: topmost state across focus and hide/show; size presets; keyboard move; corner resize; original procedural Mate; window bounds and model proportions survive restart; chat/reaction regressions. No ChatGPT message was sent.');
+} finally {
+  try { await app.evaluate(({ app }) => app.quit()); } catch {}
+  await app.close().catch(() => {});
+}

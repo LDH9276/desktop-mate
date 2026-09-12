@@ -1,0 +1,10 @@
+[
+  { "label": "기본", "state": "idle", "duration": 0 },
+  { "label": "놀람", "state": "surprise", "duration": 2400 },
+  { "label": "화남", "state": "angry", "duration": 4200 },
+  { "label": "웃음", "state": "smile", "duration": 3600 },
+  { "label": "폭소", "state": "laugh", "duration": 4400 },
+  { "label": "짜증", "state": "annoyed", "duration": 4000 },
+  { "label": "당황", "state": "embarrassed", "duration": 4200 },
+  { "label": "슬픔", "state": "sad", "duration": 4600 }
+]

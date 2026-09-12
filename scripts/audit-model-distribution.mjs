@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync, mkdirSync } from 'node:fs';
+import path from 'node:path';
+
+const root=process.cwd();
+const packaged=process.argv.includes('--packaged');
+const target=packaged?path.join(root,'portable-release','win-unpacked','resources','app','dist'):path.join(root,'dist');
+assert.ok(existsSync(target),`build output missing: ${target}`);
+const files=[];
+const walk=folder=>{for(const name of readdirSync(folder)){const file=path.join(folder,name),stat=statSync(file);if(stat.isDirectory())walk(file);else files.push(file);}};
+walk(target);
+const relative=files.map(file=>path.relative(target,file).replaceAll('\\','/'));
+const restrictedFiles=relative.filter(file=>/\.(?:vrm|pmx|pmd|fbx|unitypackage)$/i.test(file));
+assert.deepEqual(restrictedFiles,[],'restricted model data or names must not be packaged');
+const scripts=files.filter(file=>/\.js$/i.test(file)).map(file=>readFileSync(file,'utf8')).join('\n');
+assert.ok(scripts.includes('DesktopMate-original'),'procedural Mate license marker missing');
+const attribution=path.join(target,'motions','gene','ATTRIBUTION.txt');
+assert.ok(existsSync(attribution),'CC BY motion attribution missing');
+assert.match(readFileSync(attribution,'utf8'),/Creative Commons Attribution 4\.0 International/);
+const report={result:'passed',version:JSON.parse(readFileSync(path.join(root,'package.json'),'utf8')).version,packaged,target,files:relative.length,restrictedFiles,defaultModel:'Mate',defaultModelSource:'procedural Three.js geometry',motionAttribution:'CC BY 4.0 included'};
+mkdirSync(path.join(root,'artifacts'),{recursive:true});writeFileSync(path.join(root,'artifacts',`model-distribution-audit-${packaged?'packaged':'source'}.json`),JSON.stringify(report,null,2));
+console.log(JSON.stringify(report));

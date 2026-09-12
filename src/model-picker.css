@@ -1,0 +1,84 @@
+.model-picker {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.model-import{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:11px;border:1px dashed #bccdae;border-radius:9px;background:#eef3e8;color:#607651;font-size:12px}
+.model-import:disabled{opacity:.65;cursor:wait}
+.model-import-hint,.model-import-notice{font-size:10px;line-height:1.65;color:#839078;margin:7px 0 15px}
+.model-import-notice{padding:9px 10px;border-radius:8px;background:#edf2e7;color:#526945;overflow-wrap:anywhere}
+
+.model-picker legend {
+  font-size: 11px;
+  margin: 0 0 8px;
+  padding: 0;
+}
+
+.model-picker > div {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.model-picker button {
+  position: relative;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  border: 1px solid #dde5d5;
+  border-radius: 9px;
+  padding: 8px;
+  background: #f7f9f3;
+  text-align: left;
+}
+
+.model-picker button.selected {
+  border-color: #7d9869;
+  background: #edf3e6;
+  box-shadow: 0 0 0 1px #7d986926;
+}
+
+.model-picker button > span:nth-child(2) {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.model-picker button b {
+  max-width: 100%;
+  font-size: 9px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.model-picker button small {
+  font-size: 7px;
+  color: #97a18e;
+}
+
+.model-picker button > svg {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  color: #6d8958;
+}
+
+.model-swatch {
+  display: block;
+  width: 100%;
+  height: 17px;
+  border-radius: 5px;
+  background: linear-gradient(135deg, #d8bf98, #6d8062);
+}
+.model-swatch.mate{background:radial-gradient(circle at 38% 32%,#eef4df 0 15%,#8eaf78 16% 58%,#52684a 59% 100%)}
+
+.model-picker > p {
+  font-size: 8px;
+  line-height: 1.7;
+  color: #9ca58f;
+  margin: 8px 0 0;
+}

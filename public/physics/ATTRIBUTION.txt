@@ -1,0 +1,11 @@
+Ammo.js physics runtime: https://github.com/kripken/ammo.js
+License: zlib (AMMO-LICENSE.txt)
+Contributors: https://github.com/kripken/ammo.js/blob/main/AUTHORS
+ammo.wasm.js and ammo.wasm.wasm copied unmodified from three.js 0.169.0.
+
+MMDPhysics adapter: three.js r169
+https://github.com/mrdoob/three.js/blob/r169/examples/jsm/animation/MMDPhysics.js
+License: MIT (THREE-LICENSE.txt)
+Mate modifications: resource disposal, freeing temporary native allocations,
+model-space stepping, hand/garment collision mask additions and limited
+secondary rotation for head ornaments.

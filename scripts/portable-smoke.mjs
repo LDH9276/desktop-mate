@@ -1,0 +1,33 @@
+import { _electron as electron, expect } from '@playwright/test';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import assert from 'node:assert/strict';
+import path from 'node:path';
+const root=process.cwd();
+const env={...process.env,MATE_TEST_USER_DATA:mkdtempSync(path.join(root,'artifacts','portable-smoke-'))};delete env.ELECTRON_RUN_AS_NODE;
+const executablePath=path.join(root,'portable-release','win-unpacked','DesktopMate.exe');
+const packaged=JSON.parse(readFileSync(path.join(path.dirname(executablePath),'resources','app','package.json'),'utf8'));
+assert.equal(packaged.version,JSON.parse(readFileSync(path.join(root,'package.json'),'utf8')).version);
+const app=await electron.launch({executablePath,args:[],env,timeout:30000});
+try {
+  const page=await app.firstWindow();
+  await page.waitForSelector('.avatar-renderer[data-loaded="true"]',{timeout:60000});
+  const initial=await page.evaluate(()=>window.mate.windowState());
+  assert.equal(initial.alwaysOnTop,true);
+  // The original near-full-height window must be movable downwards.
+  await page.getByRole('button',{name:'창 이동',exact:true}).dispatchEvent('keydown',{key:'ArrowDown',shiftKey:true});
+  await expect.poll(()=>page.evaluate(async()=>(await window.mate.windowState()).y)).toBe(initial.y+50);
+  await page.getByRole('button',{name:'연결 및 설정',exact:true}).dispatchEvent('click');
+  await page.getByRole('button',{name:'창 크기 150%',exact:true}).dispatchEvent('click');
+  await expect.poll(()=>page.evaluate(async()=>Math.abs((await window.mate.windowState()).scale-1.5))).toBeLessThan(0.01);
+  await page.waitForSelector('.avatar-renderer[data-model="mate"][data-loaded="true"][data-model-license="DesktopMate-original"]');
+  await page.getByRole('group',{name:'모델 비율 프리셋'}).getByRole('button',{name:'통통',exact:true}).dispatchEvent('click');
+  await page.waitForFunction(()=>JSON.parse(document.querySelector('.avatar-renderer').dataset.proportions).width===1.25);
+  await page.screenshot({path:path.join(root,'artifacts',`portable-${packaged.version}-settings.png`),omitBackground:true});
+  await page.getByRole('button',{name:'설정 닫기',exact:true}).dispatchEvent('click');
+  const layout=await page.evaluate(()=>({innerWidth,innerHeight,outerWidth,outerHeight,dpr:devicePixelRatio,viewport:visualViewport?.width,host:document.querySelector('.desktop-host').getBoundingClientRect().toJSON(),shell:document.querySelector('.companion-shell').getBoundingClientRect().toJSON(),bubble:document.querySelector('.chat-bubble').getBoundingClientRect().toJSON(),toolbar:document.querySelector('.mini-toolbar').getBoundingClientRect().toJSON()}));
+  console.log('Layout',JSON.stringify(layout));
+  const native=await app.evaluate(async({BrowserWindow})=>(await BrowserWindow.getAllWindows()[0].webContents.capturePage()).toDataURL());
+  writeFileSync(path.join(root,'artifacts',`portable-${packaged.version}-native.png`),Buffer.from(native.split(',')[1],'base64'));
+  await page.screenshot({path:path.join(root,'artifacts',`portable-${packaged.version}.png`),omitBackground:true});
+  console.log(JSON.stringify({version:packaged.version,window:await page.evaluate(()=>window.mate.windowState()),model:'mate',modelLicense:'DesktopMate-original',topmostMoveAndModelControls:'passed'}));
+}finally{await app.evaluate(({app})=>app.quit()).catch(()=>{});await app.close().catch(()=>{});}
