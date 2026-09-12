@@ -8,7 +8,6 @@ import { VmdBodyMotion, jointBlend } from './motion.mjs';
 import { clipFiles, createMotionClip, composeMotion } from './expressive-motion.mjs';
 import { createMmdRig, createMmdGrantUpdater, mmdRotation } from './motion-rig.mjs';
 import { createMmdPhysics, loadAmmo } from './mmd-physics.mjs';
-import { preserveMmdAlphaLayers } from './mmd-materials.mjs';
 import { createGltfRig, gltfRotation } from './gltf-rig.mjs';
 import { defaultAppearance, type Appearance } from './appearance';
 import { defaultOutline, type OutlineStyle } from './outline';
@@ -104,7 +103,10 @@ export function Avatar({ behavior, model, compact = false, paused = false, zoom 
     let grants: ReturnType<typeof createMmdGrantUpdater> | null = null;
     let cloth: ReturnType<typeof createMmdPhysics> | null = null;
     let renderer: THREE.WebGLRenderer;
-    try { renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'low-power' }); }
+    // MMD materials use straight-alpha custom blending. Keeping the canvas in
+    // the same form avoids the Windows transparent-window compositor applying
+    // alpha twice, which otherwise turns fur and hair edges into black gaps.
+    try { renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, premultipliedAlpha: false, powerPreference: 'low-power' }); }
     catch { setError('3D 화면을 시작할 수 없어요. 그래픽 드라이버를 확인해 주세요.'); return; }
     renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -238,7 +240,6 @@ export function Avatar({ behavior, model, compact = false, paused = false, zoom 
       loader.load(model.url, mesh => {
         if (disposed) { disposeObject(mesh); return; }
         mmd = mesh;
-        preserveMmdAlphaLayers(Array.isArray(mesh.material) ? mesh.material : [mesh.material]);
         mmdBones = createMmdRig(mesh);
         grants = createMmdGrantUpdater(mesh);
         el.dataset.mmdGrants = String(grants.count);
