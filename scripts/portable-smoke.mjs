@@ -1,11 +1,12 @@
 import { _electron as electron, expect } from '@playwright/test';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 const root=process.cwd();
 const env={...process.env,MATE_TEST_USER_DATA:mkdtempSync(path.join(root,'artifacts','portable-smoke-'))};delete env.ELECTRON_RUN_AS_NODE;
 const executablePath=path.join(root,'portable-release','win-unpacked','DesktopMate.exe');
-const packaged=JSON.parse(readFileSync(path.join(path.dirname(executablePath),'resources','app','package.json'),'utf8'));
+const resources=path.join(path.dirname(executablePath),'resources');
+const packaged=JSON.parse(readFileSync(path.join(resources,existsSync(path.join(resources,'app.asar'))?'app.asar':'app','package.json'),'utf8'));
 assert.equal(packaged.version,JSON.parse(readFileSync(path.join(root,'package.json'),'utf8')).version);
 const app=await electron.launch({executablePath,args:[],env,timeout:30000});
 try {
