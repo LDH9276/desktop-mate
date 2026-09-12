@@ -16,14 +16,17 @@ try {
   // The original near-full-height window must be movable downwards.
   await page.getByRole('button',{name:'창 이동',exact:true}).dispatchEvent('keydown',{key:'ArrowDown',shiftKey:true});
   await expect.poll(()=>page.evaluate(async()=>(await window.mate.windowState()).y)).toBe(initial.y+50);
+  const settingsOpened=app.waitForEvent('window');
   await page.getByRole('button',{name:'연결 및 설정',exact:true}).dispatchEvent('click');
-  await page.getByRole('button',{name:'창 크기 150%',exact:true}).dispatchEvent('click');
+  const settings=await settingsOpened;
+  await settings.waitForSelector('.settings-panel');
+  await settings.getByRole('button',{name:'창 크기 150%',exact:true}).dispatchEvent('click');
   await expect.poll(()=>page.evaluate(async()=>Math.abs((await window.mate.windowState()).scale-1.5))).toBeLessThan(0.01);
   await page.waitForSelector('.avatar-renderer[data-model="mate"][data-loaded="true"][data-model-license="DesktopMate-original"]');
-  await page.getByRole('group',{name:'모델 비율 프리셋'}).getByRole('button',{name:'통통',exact:true}).dispatchEvent('click');
+  await settings.getByRole('group',{name:'모델 비율 프리셋'}).getByRole('button',{name:'통통',exact:true}).dispatchEvent('click');
   await page.waitForFunction(()=>JSON.parse(document.querySelector('.avatar-renderer').dataset.proportions).width===1.25);
-  await page.screenshot({path:path.join(root,'artifacts',`portable-${packaged.version}-settings.png`),omitBackground:true});
-  await page.getByRole('button',{name:'설정 닫기',exact:true}).dispatchEvent('click');
+  await settings.screenshot({path:path.join(root,'artifacts',`portable-${packaged.version}-settings.png`),omitBackground:true});
+  await settings.getByRole('button',{name:'설정 닫기',exact:true}).dispatchEvent('click');
   const layout=await page.evaluate(()=>({innerWidth,innerHeight,outerWidth,outerHeight,dpr:devicePixelRatio,viewport:visualViewport?.width,host:document.querySelector('.desktop-host').getBoundingClientRect().toJSON(),shell:document.querySelector('.companion-shell').getBoundingClientRect().toJSON(),bubble:document.querySelector('.chat-bubble').getBoundingClientRect().toJSON(),toolbar:document.querySelector('.mini-toolbar').getBoundingClientRect().toJSON()}));
   console.log('Layout',JSON.stringify(layout));
   const native=await app.evaluate(async({BrowserWindow})=>(await BrowserWindow.getAllWindows()[0].webContents.capturePage()).toDataURL());

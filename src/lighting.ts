@@ -11,9 +11,9 @@ export const defaultVisualSettings: VisualSettings = {
 };
 
 export const visualRanges: { key: keyof VisualSettings; label: string; min: number; max: number; step: number }[] = [
-  { key: 'lighting', label: '조명 강도', min: 0, max: 1.5, step: 0.05 },
-  { key: 'brightness', label: '명도', min: 0, max: 1.5, step: 0.05 },
-  { key: 'saturation', label: '채도', min: 0, max: 2, step: 0.05 },
+  { key: 'lighting', label: '조명 강도', min: 0, max: 1.5, step: 0.01 },
+  { key: 'brightness', label: '명도', min: 0, max: 1.5, step: 0.01 },
+  { key: 'saturation', label: '채도', min: 0, max: 2, step: 0.01 },
 ];
 
 const clampSetting = (key: keyof VisualSettings, value: unknown, fallback: number) => {

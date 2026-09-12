@@ -1,0 +1,31 @@
+.chat-appearance-settings{border:0;border-top:1px solid #e4e9dd;margin:18px 0 0;padding:16px 0 0;min-width:0}
+.chat-appearance-settings legend{padding:0 8px 0 0;font-size:11px;font-weight:600;color:#637a50}
+.numeric-setting .slider-label{align-items:center}
+.numeric-value{display:flex!important;align-items:center;gap:4px;white-space:nowrap}
+.numeric-value input{width:66px;border:1px solid #d4ded4;border-radius:6px;background:#fff;padding:4px 5px;text-align:right;color:#526547;font-size:10px}
+.font-select-label{display:flex;justify-content:space-between;align-items:center;margin:15px 0 8px;font-size:11px}
+.font-select-label select{max-width:180px;border:1px solid #d4ded4;border-radius:6px;background:#fff;padding:5px 7px;color:#526547;font:inherit;font-size:10px}
+.chat-color-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:12px 0}
+.color-setting{min-width:0;padding:7px;border:1px solid #e0e7d9;border-radius:8px;background:#f8faf5}
+.color-setting>label{display:block;margin-bottom:6px;color:#73836a;font-size:9px}
+.color-setting>div{display:flex;align-items:center;gap:5px}
+.color-setting input[type=color]{width:26px;height:24px;padding:1px;border:1px solid #d4ded4;border-radius:5px;background:#fff}
+.color-code{min-width:0;width:100%;border:1px solid #d4ded4;border-radius:5px;background:#fff;padding:4px;color:#526547;font:inherit;font-size:9px;text-transform:uppercase}
+
+/* Chat-only custom properties keep the companion controls and settings panel legible. */
+.companion-shell{--mate-chat-width:390px;--mate-chat-height:330px;--mate-character-height:270px;--mate-chat-font:'PyeojinGothic';--mate-chat-font-size:12px;--mate-chat-surface:#fcfdf9;--mate-chat-border:#d4ded4;--mate-chat-header:#f6f9f0;--mate-chat-composer:#f6f8f0;--mate-chat-user:#eaf0e1;--mate-chat-user-text:#475244;--mate-chat-assistant-text:#475244;--mate-chat-accent:#668457}
+main .companion-shell .chat-bubble{width:min(100%,var(--mate-chat-width));height:var(--mate-chat-height);min-height:200px;align-self:center;background:var(--mate-chat-surface);border-color:var(--mate-chat-border);font-family:var(--mate-chat-font),'PyeojinGothic','Segoe UI','Malgun Gothic',sans-serif}
+main .companion-shell .chat-header{background:var(--mate-chat-header);border-color:var(--mate-chat-border)}
+main .companion-shell .brand-mark{background:var(--mate-chat-surface);color:var(--mate-chat-accent)}
+main .companion-shell .chat-header>div>span,.companion-shell .message-author,.companion-shell .composer>div>span{color:var(--mate-chat-assistant-text)}
+main .companion-shell .composer{background:var(--mate-chat-composer);border-color:var(--mate-chat-border)}
+main .companion-shell .composer textarea{color:var(--mate-chat-assistant-text);font-size:var(--mate-chat-font-size)}
+main .companion-shell .message p{font-size:var(--mate-chat-font-size);color:var(--mate-chat-assistant-text)}
+main .companion-shell .message.user p{background:var(--mate-chat-user);color:var(--mate-chat-user-text);border-color:var(--mate-chat-border)}
+main .companion-shell .message-content{font-size:var(--mate-chat-font-size);color:var(--mate-chat-assistant-text)}
+main .companion-shell .send-button{background:var(--mate-chat-accent)}
+main .companion-shell .bubble-tail{background:var(--mate-chat-surface);border-color:var(--mate-chat-border)}
+main .companion-shell .collapsed-chat{font-family:var(--mate-chat-font),'PyeojinGothic','Segoe UI','Malgun Gothic',sans-serif;color:var(--mate-chat-accent);border-color:var(--mate-chat-border);background:var(--mate-chat-surface)}
+.desktop-host .companion-shell .chat-bubble{flex:0 1 var(--mate-chat-height)}
+.desktop-host .companion-shell .character-stage{flex:1 1 var(--mate-character-height);min-height:160px}
+.preview-host .companion-shell .character-stage{flex:0 1 var(--mate-character-height)}

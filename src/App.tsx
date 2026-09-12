@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { ArrowUp, Check, ChevronDown, FileArchive, Hand, Heart, Link2, LoaderCircle, MessageCircle, Minus, PawPrint, Power, RotateCcw, Settings2, Sparkles, Unplug, X } from 'lucide-react';
 import { Avatar, type AvatarModel } from './Avatar';
 import { CompanionBehavior, clamp } from './behavior.mjs';
@@ -8,12 +8,15 @@ import './reactions.css';
 import { loadPhysicsWeight } from './physics-settings.mjs';
 import { emotionChoices, emotionLabels, ReplyEmotionController } from './emotions.mjs';
 import { WindowMoveBar, WindowResizeHandles, WindowSizeSettings } from './WindowControls';
-import { appearancePresets, appearanceRanges, defaultAppearance, loadAppearance, type Appearance } from './appearance';
+import { appearancePresets, appearanceRange, appearanceRanges, defaultAppearance, loadAppearance, type Appearance } from './appearance';
 import { loadOutline } from './outline';
 import { OutlineSettings } from './OutlineSettings';
 import { MarkdownMessage } from './MarkdownMessage';
 import './markdown.css';
 import { defaultVisualSettings, loadVisualSettings, saveVisualSettings, visualRanges, type VisualSettings } from './lighting';
+import { ChatAppearanceSettings } from './ChatAppearanceSettings';
+import { loadChatAppearance, saveChatAppearance, type ChatAppearance } from './chat-appearance';
+import { NumericSetting } from './SettingsField';
 
 const initial: ChatState = { status: 'disconnected', conversationId: null, title: '', detail: '일반 ChatGPT에서 사용할 대화를 열고 연결해 주세요.', messages: [] };
 const labels = { disconnected: '연결 대기', connected: '연결됨', reconnecting: '대화 확인 중', sending: '전송 중', receiving: '답변 작성 중', uncertain: '확인 필요' };
@@ -65,6 +68,7 @@ export function App() {
   const [appearance, setAppearance] = useState(() => loadAppearance(savedAvatar()));
   const [outline, setOutline] = useState(loadOutline);
   const [visuals, setVisuals] = useState(loadVisualSettings);
+  const [chatAppearance, setChatAppearance] = useState(loadChatAppearance);
   const [physics, setPhysics] = useState(() => localStorage.getItem('mate.physics') !== 'off');
   const [physicsWeight, setPhysicsWeight] = useState(() => loadPhysicsWeight('mate.physicsWeight'));
   const [hairPhysics, setHairPhysics] = useState(() => localStorage.getItem('mate.hairPhysics') !== 'off');
@@ -91,7 +95,7 @@ export function App() {
       if (event.key === 'mate.avatar') {
         void window.mate?.listModels().then(models => { setImportedAvatars(models); setAvatarId(id); });
       }
-      setAppearance(loadAppearance(id)); setOutline(loadOutline()); setVisuals(loadVisualSettings());
+      setAppearance(loadAppearance(id)); setOutline(loadOutline()); setVisuals(loadVisualSettings()); setChatAppearance(loadChatAppearance());
       setPhysics(localStorage.getItem('mate.physics') !== 'off');
       setPhysicsWeight(loadPhysicsWeight('mate.physicsWeight'));
       setHairPhysics(localStorage.getItem('mate.hairPhysics') !== 'off');
@@ -149,14 +153,17 @@ export function App() {
       const r = node.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height };
     }));
     update(); const timer = setInterval(update, 200); return () => clearInterval(timer);
-  }, [chatOpen, settings, ready, appearance, avatarId, reactionsOpen]);
+  }, [chatOpen, settings, ready, appearance, avatarId, reactionsOpen, chatAppearance]);
   function chooseAvatar(id: AvatarModel['id']) {
     if (id === avatarId) return;
     setReady(false); setAvatarId(id); setAppearance(loadAppearance(id)); localStorage.setItem('mate.avatar', id);
   }
   function changeAppearance(next: Appearance) {
-    setAppearance(next); localStorage.setItem(`mate.appearance.${avatarId}`, JSON.stringify(next));
+    const offset = appearanceRange('offsetY', next.zoom);
+    const normalized = { ...next, offsetY: Math.max(offset.min, Math.min(offset.max, next.offsetY)) };
+    setAppearance(normalized); localStorage.setItem(`mate.appearance.${avatarId}`, JSON.stringify(normalized));
   }
+  function changeChatAppearance(next: ChatAppearance) { setChatAppearance(next); saveChatAppearance(next); }
   async function importZip() {
     if (!window.mate?.importModel) { setImportNotice('ZIP 불러오기는 바탕화면 앱에서 사용할 수 있습니다.'); return; }
     setImporting(true); setImportNotice('');
@@ -221,7 +228,13 @@ export function App() {
 
   return <main className={settingsWindow ? 'settings-host' : desktop ? 'desktop-host' : 'preview-host'}>
     {!desktop && <div className="preview-caption"><PawPrint size={21} /><span>MATE <b>DESKTOP COMPANION</b></span><h1>대화는 가까이.<br />바탕화면은 가볍게.</h1><p>일반 ChatGPT와 이어지는 작은 채팅창.</p><span className="preview-label">로컬 미리보기 · 연결은 데스크톱 앱에서</span></div>}
-    <div className="companion-shell">
+    <div className="companion-shell" style={{
+      '--mate-chat-width': `${chatAppearance.width}px`, '--mate-chat-height': `${chatAppearance.height}px`, '--mate-character-height': `${chatAppearance.characterHeight}px`,
+      '--mate-chat-font': chatAppearance.font, '--mate-chat-font-size': `${chatAppearance.fontSize}px`, '--mate-chat-surface': chatAppearance.surface,
+      '--mate-chat-border': chatAppearance.border, '--mate-chat-header': chatAppearance.header, '--mate-chat-composer': chatAppearance.composer,
+      '--mate-chat-user': chatAppearance.userBubble, '--mate-chat-user-text': chatAppearance.userText, '--mate-chat-assistant-text': chatAppearance.assistantText,
+      '--mate-chat-accent': chatAppearance.accent,
+    } as CSSProperties}>
       {!settingsWindow && <>
       {desktop && <WindowMoveBar />}
       {chatOpen ? <section className="chat-bubble" data-interactive aria-label="ChatGPT 미니 채팅">
@@ -258,34 +271,31 @@ export function App() {
         <header><div><span className="eyebrow">MATE SETTINGS</span><h2 id="settings-title">캐릭터와 창 설정</h2></div><button autoFocus aria-label="설정 닫기" onClick={() => setSettings(false)}><X size={19} /></button></header>
         <div className="settings-divider" />
         {desktop && <WindowSizeSettings />}
+        <ChatAppearanceSettings value={chatAppearance} onChange={changeChatAppearance} />
+        <div className="settings-divider" />
         <fieldset className="model-picker"><legend>캐릭터 모델</legend><div>{avatars.map(candidate => <button key={candidate.id} type="button" role="radio" aria-checked={avatarId === candidate.id} aria-label={`${candidate.name} 모델 선택`} className={avatarId === candidate.id ? 'selected' : ''} onClick={() => chooseAvatar(candidate.id)}><span className={`model-swatch ${candidate.id}`} /><span><b>{candidate.name}</b><small>{candidate.kind.toUpperCase()}</small></span>{avatarId === candidate.id && <Check size={14} />}</button>)}</div></fieldset>
         <button className="model-import" type="button" disabled={importing} onClick={() => void importZip()}>{importing ? <LoaderCircle size={15} className="spin" /> : <FileArchive size={15} />}{importing ? 'ZIP 모델 불러오는 중…' : '3D 모델 ZIP 불러오기'}</button>
         <p className="model-import-hint">PMX·VRM 또는 Blender에서 내보낸 GLB가 든 ZIP을 선택하세요.<br />Mate 실행 파일 옆에 ZIP을 놓아도 자동으로 추가됩니다.</p>
         <fieldset className="physics-settings"><legend>모델 물리</legend>
           <label className="physics-toggle"><input type="checkbox" checked={physics} onChange={event => { setPhysics(event.target.checked); localStorage.setItem('mate.physics', event.target.checked ? 'on' : 'off'); }} />의상 물리</label>
-          <label className="slider-label" htmlFor="physics-weight">의상 물리 가중치<span>{Math.round(physicsWeight * 100)}%</span></label>
-          <input id="physics-weight" aria-label="의상 물리 가중치" type="range" min="0" max="100" step="1" disabled={!physics} value={Math.round(physicsWeight * 100)} onChange={event => { const value = Number(event.target.value) / 100; setPhysicsWeight(value); localStorage.setItem('mate.physicsWeight', String(value)); }} />
+          <NumericSetting id="physics-weight" label="의상 물리 가중치" value={physicsWeight} min={0} max={1} step={0.01} displayScale={100} unit="%" disabled={!physics} onChange={value => { setPhysicsWeight(value); localStorage.setItem('mate.physicsWeight', String(value)); }} />
           <label className="physics-toggle"><input type="checkbox" checked={hairPhysics} onChange={event => { setHairPhysics(event.target.checked); localStorage.setItem('mate.hairPhysics', event.target.checked ? 'on' : 'off'); }} />머리카락 물리</label>
-          <label className="slider-label" htmlFor="hair-physics-weight">머리카락 물리 가중치<span>{Math.round(hairPhysicsWeight * 100)}%</span></label>
-          <input id="hair-physics-weight" aria-label="머리카락 물리 가중치" type="range" min="0" max="100" step="1" disabled={!hairPhysics} value={Math.round(hairPhysicsWeight * 100)} onChange={event => { const value = Number(event.target.value) / 100; setHairPhysicsWeight(value); localStorage.setItem('mate.hairPhysicsWeight', String(value)); }} />
+          <NumericSetting id="hair-physics-weight" label="머리카락 물리 가중치" value={hairPhysicsWeight} min={0} max={1} step={0.01} displayScale={100} unit="%" disabled={!hairPhysics} onChange={value => { setHairPhysicsWeight(value); localStorage.setItem('mate.hairPhysicsWeight', String(value)); }} />
           <p className="model-import-hint">0%는 기본 형태, 100%는 물리 움직임을 전부 적용합니다.<br />낮출수록 흔들림이 작아집니다. 머리 장식은 머리카락에 포함됩니다.<br />현재 실시간 의상·머리 물리는 PMX 물리 데이터에 적용되며 설정은 자동 저장됩니다.</p>
         </fieldset>
         {importNotice && <p className="model-import-notice" role="status">{importNotice}</p>}
         <div className="appearance-heading">모델 크기와 비율<small>모델마다 따로 저장</small></div>
         <div className="appearance-presets" role="group" aria-label="모델 비율 프리셋">{appearancePresets.map(preset => <button type="button" key={preset.label} onClick={() => changeAppearance({ ...preset.value })}>{preset.label}</button>)}</div>
-        {appearanceRanges.map(({ key, label, min, max, step, unit }) => <div key={key}><label className="slider-label" htmlFor={`appearance-${key}`}>{label}<span>{Math.round(appearance[key] * (unit === '%' ? 100 : 1))}{unit}</span></label><input id={`appearance-${key}`} type="range" min={min} max={max} step={step} value={appearance[key]} onChange={event => changeAppearance({ ...appearance, [key]: Number(event.target.value) })} /></div>)}
-        <p className="appearance-hint">크기 50–200% · 가로/세로 60–160%<br />확대한 모델은 위아래 위치를 조절해 맞춰 보세요.</p>
+        {appearanceRanges.map(({ key }) => { const range = appearanceRange(key, appearance.zoom); return <NumericSetting key={key} id={`appearance-${key}`} label={range.label} value={appearance[key]} min={range.min} max={range.max} step={range.step} unit={range.unit} displayScale={range.unit === '%' ? 100 : 1} onChange={value => changeAppearance({ ...appearance, [key]: value })} />; })}
+        <p className="appearance-hint">크기 50–600% · 가로/세로 30–300%<br />위아래 위치 범위는 캐릭터 크기에 비례해 최대 ±360%까지 넓어집니다.</p>
         <button type="button" className="appearance-reset" onClick={() => changeAppearance({ ...defaultAppearance })}><RotateCcw size={12} />이 모델의 비율 초기화</button>
         <fieldset className="lighting-settings">
           <legend>캐릭터 조명과 색상</legend>
-          {visualRanges.map(({ key, label, min, max, step }) => <div key={key}>
-            <label className="slider-label" htmlFor={`visual-${key}`}>{label}<span>{Math.round(visuals[key] * 100)}%</span></label>
-            <input id={`visual-${key}`} aria-label={label} type="range" min={min} max={max} step={step} value={visuals[key]} onChange={event => { const value: VisualSettings = { ...visuals, [key]: Number(event.target.value) }; setVisuals(value); saveVisualSettings(value); }} />
-          </div>)}
+          {visualRanges.map(({ key, label, min, max, step }) => <NumericSetting key={key} id={`visual-${key}`} label={label} value={visuals[key]} min={min} max={max} step={step} displayScale={100} unit="%" onChange={next => { const value: VisualSettings = { ...visuals, [key]: next }; setVisuals(value); saveVisualSettings(value); }} />)}
           <p className="appearance-hint">조명·명도 0–150% · 채도 0–200%<br />채도 0%는 흑백이며 모든 모델에 공통 적용됩니다.</p>
           <button type="button" className="appearance-reset" onClick={() => { const value = { ...defaultVisualSettings }; setVisuals(value); saveVisualSettings(value); }}><RotateCcw size={12} />조명과 색상 초기화</button>
         </fieldset>
-        <label className="slider-label" htmlFor="shake">흔들림 민감도<span>{sensitivity < 1 ? '낮음' : sensitivity > 1 ? '높음' : '보통'}</span></label><input id="shake" type="range" min="0.5" max="1.5" step="0.25" value={sensitivity} onChange={event => { setSensitivity(Number(event.target.value)); localStorage.setItem('mate.sensitivity', event.target.value); }} />
+        <NumericSetting id="shake" label="흔들림 민감도" value={sensitivity} min={0.5} max={1.5} step={0.01} displayScale={100} unit="%" onChange={value => { setSensitivity(value); localStorage.setItem('mate.sensitivity', String(value)); }} />
         <OutlineSettings value={outline} onChange={value => { setOutline(value); localStorage.setItem('mate.outline', JSON.stringify(value)); }} />
         <div className="settings-divider" />
         <h3 className="appearance-heading">ChatGPT 연결</h3>
@@ -298,7 +308,7 @@ export function App() {
         {state.conversationId && <div className="bound-session"><span><i className={connected ? 'online' : ''} />대화 {state.conversationId.slice(0, 8)}…</span><button disabled={busy || scanning} onClick={async () => { try { await window.mate?.disconnect(); } catch (error) { setError(clean(error)); } }}><Unplug size={13} />연결 해제</button></div>}
         {error && <p className="inline-error" role="alert">{error}</p>}
         <p className="compatibility-note">주소는 이 PC의 Mate 설정에만 저장됩니다. 해당 탭을 닫거나 다른 대화로 이동하면 전송 전에 확인을 멈춥니다. 최소화 중 대화를 읽지 못하면 Chrome 창을 복원해 주세요. 같은 대화를 확인한 뒤 답변을 이어 받습니다.</p>
-        <footer><span>{avatar.name} · {avatar.creator}<br /><small>Version 0.4.9 · 로컬 실행</small></span><button aria-label="프로그램 종료" onClick={() => window.mate?.quit()}><Power size={15} />종료</button></footer>
+        <footer><span>{avatar.name} · {avatar.creator}<br /><small>Version 0.5.0 · 로컬 실행</small></span><button aria-label="프로그램 종료" onClick={() => window.mate?.quit()}><Power size={15} />종료</button></footer>
       </section>}
       {desktop && !settingsWindow && <WindowResizeHandles />}
     </div>
