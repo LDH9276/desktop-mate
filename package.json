@@ -1,6 +1,6 @@
 {
   "name": "desktop-mate",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "private": true,
   "description": "A small VRM desktop companion",
   "author": "Local",

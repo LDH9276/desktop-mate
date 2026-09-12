@@ -6,7 +6,10 @@ const root=process.cwd();
 const env={...process.env,MATE_TEST_USER_DATA:mkdtempSync(path.join(root,'artifacts','portable-smoke-'))};delete env.ELECTRON_RUN_AS_NODE;
 const executablePath=path.join(root,'portable-release','win-unpacked','DesktopMate.exe');
 const resources=path.join(path.dirname(executablePath),'resources');
-const packaged=JSON.parse(readFileSync(existsSync(path.join(resources,'app.asar')) ? path.join(root,'package.json') : path.join(resources,'app','package.json'),'utf8'));
+const appDirectory=path.join(resources,'app');
+assert.equal(existsSync(path.join(resources,'app.asar')),false,'연결 도우미 실행을 위해 앱은 ASAR로 압축하면 안 됩니다.');
+assert.equal(existsSync(path.join(appDirectory,'native','ChatBridge.exe')),true,'휴대용 앱에 연결 도우미가 없습니다.');
+const packaged=JSON.parse(readFileSync(path.join(appDirectory,'package.json'),'utf8'));
 assert.equal(packaged.version,JSON.parse(readFileSync(path.join(root,'package.json'),'utf8')).version);
 const app=await electron.launch({executablePath,args:[],env,timeout:30000});
 try {
