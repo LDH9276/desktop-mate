@@ -10,6 +10,9 @@ export type ChatAppearance = {
   height: number;
   characterHeight: number;
   fontSize: number;
+  lineHeight: number;
+  letterSpacing: number;
+  glyphWidth: number;
   font: ChatFont;
   surface: string;
   border: string;
@@ -26,6 +29,9 @@ export const defaultChatAppearance: ChatAppearance = {
   height: 330,
   characterHeight: 270,
   fontSize: 12,
+  lineHeight: 1.8,
+  letterSpacing: 0,
+  glyphWidth: 1,
   font: 'PyeojinGothic',
   surface: '#fcfdf9',
   border: '#d4ded4',
@@ -37,11 +43,14 @@ export const defaultChatAppearance: ChatAppearance = {
   accent: '#668457',
 };
 
-export const chatNumberRanges: { key: 'width' | 'height' | 'characterHeight' | 'fontSize'; label: string; min: number; max: number; step: number; unit: string }[] = [
+export const chatNumberRanges: { key: 'width' | 'height' | 'characterHeight' | 'fontSize' | 'lineHeight' | 'letterSpacing' | 'glyphWidth'; label: string; min: number; max: number; step: number; unit: string; displayScale?: number }[] = [
   { key: 'width', label: '채팅창 너비', min: 280, max: 720, step: 1, unit: 'px' },
   { key: 'height', label: '채팅창 높이', min: 200, max: 620, step: 1, unit: 'px' },
   { key: 'characterHeight', label: '캐릭터 영역 높이', min: 160, max: 720, step: 1, unit: 'px' },
   { key: 'fontSize', label: '채팅 글자 크기', min: 9, max: 24, step: 1, unit: 'px' },
+  { key: 'lineHeight', label: '줄 간격', min: 1, max: 3, step: 0.01, unit: '%', displayScale: 100 },
+  { key: 'letterSpacing', label: '자간', min: -1, max: 5, step: 0.1, unit: 'px' },
+  { key: 'glyphWidth', label: '글자 가로 비율(장평)', min: 0.8, max: 1.2, step: 0.01, unit: '%', displayScale: 100 },
 ];
 
 export const chatColorFields: { key: keyof Pick<ChatAppearance, 'surface' | 'border' | 'header' | 'composer' | 'userBubble' | 'userText' | 'assistantText' | 'accent'>; label: string }[] = [

@@ -230,7 +230,7 @@ export function App() {
     {!desktop && <div className="preview-caption"><PawPrint size={21} /><span>MATE <b>DESKTOP COMPANION</b></span><h1>대화는 가까이.<br />바탕화면은 가볍게.</h1><p>일반 ChatGPT와 이어지는 작은 채팅창.</p><span className="preview-label">로컬 미리보기 · 연결은 데스크톱 앱에서</span></div>}
     <div className="companion-shell" style={{
       '--mate-chat-width': `${chatAppearance.width}px`, '--mate-chat-height': `${chatAppearance.height}px`, '--mate-character-height': `${chatAppearance.characterHeight}px`,
-      '--mate-chat-font': chatAppearance.font, '--mate-chat-font-size': `${chatAppearance.fontSize}px`, '--mate-chat-surface': chatAppearance.surface,
+      '--mate-chat-font': chatAppearance.font, '--mate-chat-font-size': `${chatAppearance.fontSize}px`, '--mate-chat-line-height': String(chatAppearance.lineHeight), '--mate-chat-letter-spacing': `${chatAppearance.letterSpacing}px`, '--mate-chat-glyph-width': String(chatAppearance.glyphWidth), '--mate-chat-surface': chatAppearance.surface,
       '--mate-chat-border': chatAppearance.border, '--mate-chat-header': chatAppearance.header, '--mate-chat-composer': chatAppearance.composer,
       '--mate-chat-user': chatAppearance.userBubble, '--mate-chat-user-text': chatAppearance.userText, '--mate-chat-assistant-text': chatAppearance.assistantText,
       '--mate-chat-accent': chatAppearance.accent,

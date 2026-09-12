@@ -29,6 +29,15 @@ try {
   await settings.getByRole('spinbutton',{name:'채팅 글자 크기 값',exact:true}).fill('17');
   await settings.getByRole('spinbutton',{name:'채팅 글자 크기 값',exact:true}).press('Tab');
   await expect.poll(()=>page.locator('.companion-shell').evaluate(node=>node.style.getPropertyValue('--mate-chat-font-size'))).toBe('17px');
+  await settings.getByRole('spinbutton',{name:'줄 간격 값',exact:true}).fill('150');
+  await settings.getByRole('spinbutton',{name:'줄 간격 값',exact:true}).press('Tab');
+  await expect.poll(()=>page.locator('.companion-shell').evaluate(node=>node.style.getPropertyValue('--mate-chat-line-height'))).toBe('1.5');
+  await settings.getByRole('spinbutton',{name:'자간 값',exact:true}).fill('0.5');
+  await settings.getByRole('spinbutton',{name:'자간 값',exact:true}).press('Tab');
+  await expect.poll(()=>page.locator('.companion-shell').evaluate(node=>node.style.getPropertyValue('--mate-chat-letter-spacing'))).toBe('0.5px');
+  await settings.getByRole('spinbutton',{name:'글자 가로 비율(장평) 값',exact:true}).fill('110');
+  await settings.getByRole('spinbutton',{name:'글자 가로 비율(장평) 값',exact:true}).press('Tab');
+  await expect.poll(()=>page.locator('.companion-shell').evaluate(node=>node.style.getPropertyValue('--mate-chat-glyph-width'))).toBe('1.1');
   await settings.getByRole('combobox',{name:'채팅 글꼴',exact:true}).selectOption('Consolas');
   await expect.poll(()=>page.locator('.companion-shell').evaluate(node=>node.style.getPropertyValue('--mate-chat-font'))).toBe('Consolas');
   await settings.getByRole('spinbutton',{name:'캐릭터 크기 값',exact:true}).fill('600');
@@ -39,6 +48,14 @@ try {
   await settings.getByRole('spinbutton',{name:'위아래 위치 값',exact:true}).press('Tab');
   await page.waitForFunction(()=>JSON.parse(document.querySelector('.avatar-renderer').dataset.proportions).offsetY===3);
   await settings.getByRole('button',{name:'설정 닫기',exact:true}).dispatchEvent('click');
+  const portraitDisplay=await app.evaluate(({screen})=>screen.getAllDisplays().find(display=>display.workArea.width>=1170&&display.workArea.height>=2160)?.workArea ?? null);
+  if (portraitDisplay) {
+    await app.evaluate(({BrowserWindow}, area)=>BrowserWindow.getAllWindows()[0].setContentBounds({x:area.x,y:area.y,width:1170,height:2160}),portraitDisplay);
+    await expect.poll(()=>page.evaluate(async()=>Math.abs((await window.mate.windowState()).scale-3))).toBeLessThan(0.01);
+    assert.equal(await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].webContents.getZoomFactor()),1);
+  }
+  await page.evaluate(()=>window.mate.setWindowScale(0.75));
+  await expect.poll(()=>page.evaluate(async()=>Math.abs((await window.mate.windowState()).scale-0.75))).toBeLessThan(0.01);
   await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setPosition(100,100));
   const before=await page.evaluate(()=>window.mate.windowState());
   await page.getByRole('button',{name:'창 이동',exact:true}).dispatchEvent('keydown',{key:'ArrowDown',shiftKey:true});

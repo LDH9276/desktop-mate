@@ -13,19 +13,25 @@
 .color-code{min-width:0;width:100%;border:1px solid #d4ded4;border-radius:5px;background:#fff;padding:4px;color:#526547;font:inherit;font-size:9px;text-transform:uppercase}
 
 /* Chat-only custom properties keep the companion controls and settings panel legible. */
-.companion-shell{--mate-chat-width:390px;--mate-chat-height:330px;--mate-character-height:270px;--mate-chat-font:'PyeojinGothic';--mate-chat-font-size:12px;--mate-chat-surface:#fcfdf9;--mate-chat-border:#d4ded4;--mate-chat-header:#f6f9f0;--mate-chat-composer:#f6f8f0;--mate-chat-user:#eaf0e1;--mate-chat-user-text:#475244;--mate-chat-assistant-text:#475244;--mate-chat-accent:#668457}
+.companion-shell{--mate-chat-width:390px;--mate-chat-height:330px;--mate-character-height:270px;--mate-chat-font:'PyeojinGothic';--mate-chat-font-size:12px;--mate-chat-line-height:1.8;--mate-chat-letter-spacing:0px;--mate-chat-glyph-width:1;--mate-chat-surface:#fcfdf9;--mate-chat-border:#d4ded4;--mate-chat-header:#f6f9f0;--mate-chat-composer:#f6f8f0;--mate-chat-user:#eaf0e1;--mate-chat-user-text:#475244;--mate-chat-assistant-text:#475244;--mate-chat-accent:#668457}
 main .companion-shell .chat-bubble{width:min(100%,var(--mate-chat-width));height:var(--mate-chat-height);min-height:200px;align-self:center;background:var(--mate-chat-surface);border-color:var(--mate-chat-border);font-family:var(--mate-chat-font),'PyeojinGothic','Segoe UI','Malgun Gothic',sans-serif}
 main .companion-shell .chat-header{background:var(--mate-chat-header);border-color:var(--mate-chat-border)}
 main .companion-shell .brand-mark{background:var(--mate-chat-surface);color:var(--mate-chat-accent)}
 main .companion-shell .chat-header>div>span,.companion-shell .message-author,.companion-shell .composer>div>span{color:var(--mate-chat-assistant-text)}
 main .companion-shell .composer{background:var(--mate-chat-composer);border-color:var(--mate-chat-border)}
-main .companion-shell .composer textarea{color:var(--mate-chat-assistant-text);font-size:var(--mate-chat-font-size)}
-main .companion-shell .message p{font-size:var(--mate-chat-font-size);color:var(--mate-chat-assistant-text)}
+main .companion-shell .composer textarea{color:var(--mate-chat-assistant-text);font-size:var(--mate-chat-font-size);line-height:var(--mate-chat-line-height)}
+main .companion-shell .message p{font-size:var(--mate-chat-font-size);line-height:var(--mate-chat-line-height);color:var(--mate-chat-assistant-text)}
 main .companion-shell .message.user p{background:var(--mate-chat-user);color:var(--mate-chat-user-text);border-color:var(--mate-chat-border)}
-main .companion-shell .message-content{font-size:var(--mate-chat-font-size);color:var(--mate-chat-assistant-text)}
+main .companion-shell .message-content{font-size:var(--mate-chat-font-size);line-height:var(--mate-chat-line-height);color:var(--mate-chat-assistant-text)}
 main .companion-shell .send-button{background:var(--mate-chat-accent)}
 main .companion-shell .bubble-tail{background:var(--mate-chat-surface);border-color:var(--mate-chat-border)}
 main .companion-shell .collapsed-chat{font-family:var(--mate-chat-font),'PyeojinGothic','Segoe UI','Malgun Gothic',sans-serif;color:var(--mate-chat-accent);border-color:var(--mate-chat-border);background:var(--mate-chat-surface)}
 .desktop-host .companion-shell .chat-bubble{flex:0 1 var(--mate-chat-height)}
 .desktop-host .companion-shell .character-stage{flex:1 1 var(--mate-character-height);min-height:160px}
 .preview-host .companion-shell .character-stage{flex:0 1 var(--mate-character-height)}
+
+/* Pyeojin Gothic is a static font, so horizontal scaling is applied to the
+   rendered text rather than relying on font-stretch support from the font. */
+main .companion-shell .chat-bubble :is(.message p,.message-content,.message-author,.composer textarea,.empty-chat h2,.empty-chat p,.empty-note,.reply-status,.inline-error){letter-spacing:var(--mate-chat-letter-spacing)}
+main .companion-shell .message p,main .companion-shell .message-content,main .companion-shell .message-author,main .companion-shell .empty-chat h2,main .companion-shell .empty-chat p,main .companion-shell .empty-note,main .companion-shell .reply-status,main .companion-shell .inline-error{transform:scaleX(var(--mate-chat-glyph-width));transform-origin:left center}
+main .companion-shell .message.user p{transform-origin:right center}

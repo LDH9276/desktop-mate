@@ -17,8 +17,8 @@ function ColorSetting({ label, value, onChange }: { label: string; value: string
 export function ChatAppearanceSettings({ value, onChange }: { value: ChatAppearance; onChange: (value: ChatAppearance) => void }) {
   return <fieldset className="chat-appearance-settings">
     <legend>채팅창 모양과 글꼴</legend>
-    <p className="appearance-hint">숫자를 직접 입력하거나 슬라이더로 1px씩 조절할 수 있습니다. 너비가 창보다 크면 창 크기도 함께 넓혀 주세요.</p>
-    {chatNumberRanges.map(range => <NumericSetting key={range.key} id={`chat-${range.key}`} label={range.label} value={value[range.key]} min={range.min} max={range.max} step={range.step} unit={range.unit} onChange={next => onChange({ ...value, [range.key]: next })} />)}
+    <p className="appearance-hint">숫자를 직접 입력하거나 슬라이더로 1px·1%씩 조절할 수 있습니다. 창 배율을 키워도 채팅 글자 크기는 실제 화면 크기로 유지됩니다. 장평은 100%가 기본이며 글자의 가로 폭만 조절합니다.</p>
+    {chatNumberRanges.map(range => <NumericSetting key={range.key} id={`chat-${range.key}`} label={range.label} value={value[range.key]} min={range.min} max={range.max} step={range.step} unit={range.unit} displayScale={range.displayScale} onChange={next => onChange({ ...value, [range.key]: next })} />)}
     <label className="font-select-label" htmlFor="chat-font">채팅 글꼴<select id="chat-font" value={value.font} onChange={event => onChange({ ...value, font: event.target.value as ChatAppearance['font'] })}>{chatFontOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
     <div className="chat-color-grid">{chatColorFields.map(field => <ColorSetting key={field.key} label={field.label} value={value[field.key]} onChange={next => onChange({ ...value, [field.key]: next })} />)}</div>
     <button type="button" className="appearance-reset" onClick={() => onChange({ ...defaultChatAppearance })}><RotateCcw size={12} />채팅창 모양 초기화</button>

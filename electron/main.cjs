@@ -8,7 +8,7 @@ protocol.registerSchemesAsPrivileged([{ scheme: 'mate-model', privileges: { stan
 let modelLibrary, startupModels = Promise.resolve(), importingModel = false;
 
 const { DEFAULT_SCALE, edges, validBounds, fitBounds, scaledBounds, reachableBounds, resizeBounds, contentScale } = require('./window-geometry.cjs');
-let companion, settingsWindow, tray, drag, pointerTimer, statusTimer, saveTimer, quitting = false, uiScale = 1;
+let companion, settingsWindow, tray, drag, pointerTimer, statusTimer, saveTimer, quitting = false, uiScale = 1, contentZoom = 1;
 let hitRegions = [], ignoresMouse = false;
 const session = new ChatSession();
 const productionURL = pathToFileURL(path.join(__dirname, '../dist/index.html')).href;
@@ -56,7 +56,10 @@ function saveWindow() {
 }
 function updateWindow() {
   uiScale = contentScale(companion.getContentBounds());
-  companion.webContents.setZoomFactor(uiScale);
+  // 창의 외형은 화면에 맞춰 커지되, 내용은 100%보다 크게 확대하지 않는다.
+  // 세로 모니터에서 300% 창 배율이 글자·아이콘까지 3배로 키우는 것을 막는다.
+  contentZoom = Math.min(1, uiScale);
+  companion.webContents.setZoomFactor(contentZoom);
   broadcast('mate:window-state', windowState());
   clearTimeout(saveTimer); saveTimer = setTimeout(saveWindow, 300);
 }
@@ -75,14 +78,16 @@ function show() {
     if (validBounds(saved)) bounds = fitBounds(saved, screen.getDisplayMatching(saved).workArea);
   } catch { /* First launch or an invalid preference file uses the screen-fit default. */ }
   uiScale = contentScale(bounds);
+  contentZoom = Math.min(1, uiScale);
   companion = new BrowserWindow({ ...bounds, useContentSize: true,
     frame: false, transparent: true, backgroundColor: '#00000000', hasShadow: false, resizable: false,
     alwaysOnTop: true, skipTaskbar: true, title: 'Mate · ChatGPT 데스크톱 채팅',
-    webPreferences: { preload: path.join(__dirname, 'preload.cjs'), zoomFactor: uiScale, contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false },
+    webPreferences: { preload: path.join(__dirname, 'preload.cjs'), zoomFactor: contentZoom, contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false },
   });
   companion.setContentBounds(bounds);
   uiScale = contentScale(companion.getContentBounds());
-  companion.webContents.setZoomFactor(uiScale);
+  contentZoom = Math.min(1, uiScale);
+  companion.webContents.setZoomFactor(contentZoom);
   companion.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   companion.webContents.on('will-navigate', (event, url) => { if (![productionURL, devURL].includes(url.split('#')[0])) event.preventDefault(); });
   companion.webContents.session.setPermissionRequestHandler((_, __, callback) => callback(false));
@@ -116,7 +121,7 @@ function show() {
       }
     } else {
       const [x, y] = companion.getPosition();
-      const hit = hitRegions.some(r => cursor.x - x >= r.x * uiScale && cursor.x - x <= (r.x + r.width) * uiScale && cursor.y - y >= r.y * uiScale && cursor.y - y <= (r.y + r.height) * uiScale);
+      const hit = hitRegions.some(r => cursor.x - x >= r.x * contentZoom && cursor.x - x <= (r.x + r.width) * contentZoom && cursor.y - y >= r.y * contentZoom && cursor.y - y <= (r.y + r.height) * contentZoom);
       if (ignoresMouse !== !hit) { ignoresMouse = !hit; companion.setIgnoreMouseEvents(ignoresMouse, { forward: true }); }
     }
   }, 25);
