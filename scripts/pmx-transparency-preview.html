@@ -1,0 +1,40 @@
+<!doctype html><html><head><style>body{margin:0;background:#354656;overflow:hidden}canvas{display:block}</style></head><body><script type="module">
+import * as THREE from 'three';
+import { MMDLoader } from 'three/addons/loaders/MMDLoader.js';
+import { configurePmxMaterials } from '../src/pmx-materials.mjs';
+const query=new URLSearchParams(location.search), fixed=query.get('fixed')!=='false';
+const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true,premultipliedAlpha:fixed,preserveDrawingBuffer:true});
+renderer.setSize(900,1000); renderer.setClearColor(0,0);document.body.append(renderer.domElement);
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(29,.9,.1,100);
+window.checkCompositing=()=>{
+  const target=new THREE.WebGLRenderTarget(16,16),testScene=new THREE.Scene(),testCamera=new THREE.OrthographicCamera(-1,1,1,-1,.1,10);testCamera.position.z=3;
+  const map=new THREE.DataTexture(new Uint8Array([255,255,255,0,255,255,255,128]),2,1);map.needsUpdate=true;
+  const frontMaterial=new THREE.MeshBasicMaterial({map,blending:THREE.CustomBlending,blendSrc:THREE.SrcAlphaFactor,blendDst:THREE.OneMinusSrcAlphaFactor,blendSrcAlpha:THREE.SrcAlphaFactor,blendDstAlpha:THREE.DstAlphaFactor});
+  const fur=new THREE.Mesh(new THREE.PlaneGeometry(2,2),frontMaterial);fur.position.z=.5;fur.renderOrder=-1;testScene.add(fur);
+  const hair=new THREE.Mesh(new THREE.PlaneGeometry(2,2),new THREE.MeshBasicMaterial({color:0x3355cc}));testScene.add(hair);
+  const sample=()=>{renderer.setRenderTarget(target);renderer.render(testScene,testCamera);const invisible=new Uint8Array(4),partial=new Uint8Array(4);renderer.readRenderTargetPixels(target,4,8,1,1,invisible);renderer.readRenderTargetPixels(target,12,8,1,1,partial);return {invisible:[...invisible],partial:[...partial]};};
+  const before=sample();configurePmxMaterials(fur);const after=sample();hair.visible=false;const isolated=sample();
+  // Two PMX-style transparent groups at the same object sort depth must still
+  // occlude solid texels correctly (the skirt/leg regression).
+  hair.visible=true;hair.material.transparent=true;hair.renderOrder=2;
+  map.image.data[7]=255;map.needsUpdate=true;const occlusion=sample();
+  renderer.setRenderTarget(null);target.dispose();fur.geometry.dispose();hair.geometry.dispose();frontMaterial.dispose();hair.material.dispose();map.dispose();
+  return {before,after,isolated,occlusion};
+};
+scene.add(new THREE.HemisphereLight(0xffffff,0xc3b4a3,2));
+for(const [color,power,position] of [[0xfff5e9,2.4,[-2,4,5]],[0xf0eeff,1.3,[3,2,-3]]]){const light=new THREE.DirectionalLight(color,power);light.position.set(...position);scene.add(light);}
+const manager=new THREE.LoadingManager(); let mesh;
+manager.onLoad=()=>{
+  if(!mesh)return;
+  window.materialReport=mesh.material.map(m=>({name:m.name,map:m.map?.image?.src,transparent:m.transparent,depthWrite:m.depthWrite,alphaTest:m.alphaTest}));
+  window.draw=(angle=0)=>{mesh.rotation.y=angle;renderer.render(scene,camera);};
+  window.draw(Number(query.get('angle')||0));document.body.dataset.ready='true';
+};
+manager.onError=url=>{document.body.dataset.error=url;};
+new MMDLoader(manager).load(query.get('model'),loaded=>{
+  mesh=loaded;if(fixed)configurePmxMaterials(mesh);
+  const box=new THREE.Box3().setFromObject(mesh),height=box.max.y-box.min.y,scale=2/height;
+  mesh.scale.setScalar(scale);mesh.position.set(-(box.min.x+box.max.x)*.5*scale,-box.min.y*scale,-(box.min.z+box.max.z)*.5*scale);
+  scene.add(mesh);camera.position.set(0,1.45,2.6);camera.lookAt(0,1.4,0);
+},undefined,error=>{document.body.dataset.error=String(error);});
+</script></body></html>

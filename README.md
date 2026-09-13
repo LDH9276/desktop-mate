@@ -4,7 +4,7 @@
 
 [![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?logo=windows)](https://www.microsoft.com/windows/)
 [![Node.js](https://img.shields.io/badge/Node.js-22%20LTS-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
-[![Version](https://img.shields.io/badge/version-0.6.2-6b8559)](./package.json)
+[![Version](https://img.shields.io/badge/version-0.6.5-6b8559)](./package.json)
 
 Mate는 화면 위에 항상 떠 있는 작은 캐릭터와 미니 채팅창을 제공합니다. 별도의 API 키를 입력하는 방식이 아니라, 사용자가 Chrome에 열어 둔 **일반 ChatGPT 대화 하나**를 Windows 접근성 기능으로 연결합니다.
 
@@ -252,6 +252,7 @@ Mate는 결과를 확인하지 못한 메시지를 자동으로 다시 보내지
 | `npm run desktop` | 기존 빌드 결과로 Electron 앱만 실행 |
 | `npm run dev` | Vite 개발 서버 실행 |
 | `npm run test:ui` | Electron UI 스모크 테스트 |
+| `npm run test:pmx -- <모델-ZIP-경로>` | 로컬 PMX 정면·양측면 스크린샷과 알파/깊이 합성 회귀 확인 |
 | `npm run package:portable` | Windows 포터블 실행 파일 생성 |
 
 개발 서버와 Electron을 함께 사용할 때는 터미널 두 개를 엽니다.

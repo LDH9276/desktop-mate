@@ -49,6 +49,10 @@ export function createGltfRig(root) {
   return rig;
 }
 
-export function gltfRotation(entry, canonical) {
-  return entry.base.clone().multiply(new Quaternion(canonical.x, canonical.y, canonical.z, canonical.w)).normalize();
+export function gltfRotation(entry, canonical, reference = new Quaternion()) {
+  // Generic Blender rigs can be authored in A-pose, T-pose or a relaxed pose.
+  // Apply the motion relative to its first neutral frame so importing a model
+  // never adds the app's full VRM rest rotation on top of the authored pose.
+  const delta = new Quaternion(reference.x, reference.y, reference.z, reference.w).invert().multiply(canonical);
+  return entry.base.clone().multiply(delta).normalize();
 }

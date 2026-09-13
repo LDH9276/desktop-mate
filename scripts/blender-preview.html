@@ -11,7 +11,7 @@ try{
   const gltf=await new GLTFLoader().loadAsync(new URLSearchParams(location.search).get('model'));
   const root=gltf.scene,rig=createGltfRig(root);root.updateMatrixWorld(true);const box=new THREE.Box3().setFromObject(root),height=box.max.y-box.min.y,scale=1.9/height;
   root.scale.setScalar(scale);root.position.set(-(box.min.x+box.max.x)*.5*scale,-box.min.y*scale,-(box.min.z+box.max.z)*.5*scale);scene.add(root);
-  for(const [name,angles] of [['head',[-.08,.15,.08]],['leftUpperArm',[.04,-.1,.2]],['rightUpperArm',[.04,.1,-.2]]]){const entry=rig.get(name);if(entry)entry.bone.quaternion.copy(gltfRotation(entry,new THREE.Quaternion().setFromEuler(new THREE.Euler(...angles))));}
+  for(const [name,angles] of [['head',[-.08,.15,.08]],['leftUpperArm',[.04,-.1,.2]],['rightUpperArm',[.04,.1,-.2]]]){const entry=rig.get(name);if(entry)entry.bone.quaternion.copy(gltfRotation(entry,new THREE.Quaternion().setFromEuler(new THREE.Euler(...angles)),new THREE.Quaternion()));}
   root.updateMatrixWorld(true);renderer.render(scene,camera);
   let skinned=0,meshes=0,triangles=0;root.traverse(node=>{if(node.isMesh){meshes++;triangles+=(node.geometry.index?.count||node.geometry.attributes.position?.count||0)/3;}if(node.isSkinnedMesh)skinned++;});
   document.body.dataset.report=JSON.stringify({bones:rig.size,skinned,meshes,triangles:Math.round(triangles),height:Number(height.toFixed(3)),names:[...rig.keys()]});document.body.dataset.ready='true';

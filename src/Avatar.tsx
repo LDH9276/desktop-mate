@@ -12,6 +12,7 @@ import { createGltfRig, gltfRotation } from './gltf-rig.mjs';
 import { defaultAppearance, type Appearance } from './appearance';
 import { defaultOutline, type OutlineStyle } from './outline';
 import { defaultVisualSettings } from './lighting';
+import { configurePmxMaterials } from './pmx-materials.mjs';
 
 export type AvatarModel = {
   id: string;
@@ -103,10 +104,9 @@ export function Avatar({ behavior, model, compact = false, paused = false, zoom 
     let grants: ReturnType<typeof createMmdGrantUpdater> | null = null;
     let cloth: ReturnType<typeof createMmdPhysics> | null = null;
     let renderer: THREE.WebGLRenderer;
-    // MMD materials use straight-alpha custom blending. Keeping the canvas in
-    // the same form avoids the Windows transparent-window compositor applying
-    // alpha twice, which otherwise turns fur and hair edges into black gaps.
-    try { renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, premultipliedAlpha: false, powerPreference: 'low-power' }); }
+    // Source-over blending produces premultiplied framebuffer colors; Chromium
+    // must interpret that buffer the same way when compositing onto the desktop.
+    try { renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, premultipliedAlpha: true, powerPreference: 'low-power' }); }
     catch { setError('3D 화면을 시작할 수 없어요. 그래픽 드라이버를 확인해 주세요.'); return; }
     renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -128,6 +128,7 @@ export function Avatar({ behavior, model, compact = false, paused = false, zoom 
     let mmd: THREE.SkinnedMesh | undefined;
     let proceduralBones = new Map<string, THREE.Object3D>();
     let gltfBones: ReturnType<typeof createGltfRig> = new Map();
+    const gltfReference = new Map<string, THREE.Quaternion>();
     let modelRoot: THREE.Object3D | undefined;
     let disposed = false, frame = 0, lastFrame = 0, neckY = 1.4, motionTime = 0, renderedLighting = -1, renderedFilter = '';
     let mmdBones: ReturnType<typeof createMmdRig> = new Map();
@@ -240,6 +241,7 @@ export function Avatar({ behavior, model, compact = false, paused = false, zoom 
       loader.load(model.url, mesh => {
         if (disposed) { disposeObject(mesh); return; }
         mmd = mesh;
+        configurePmxMaterials(mesh);
         mmdBones = createMmdRig(mesh);
         grants = createMmdGrantUpdater(mesh);
         el.dataset.mmdGrants = String(grants.count);
@@ -278,7 +280,8 @@ export function Avatar({ behavior, model, compact = false, paused = false, zoom 
           else if (proceduralBones.has(name)) proceduralBones.get(name)!.quaternion.slerp(target, follow);
           else if (gltfBones.has(name)) {
             const entry = gltfBones.get(name)!;
-            entry.bone.quaternion.slerp(gltfRotation(entry, target), follow);
+            if (!gltfReference.has(name)) gltfReference.set(name, target.clone());
+            entry.bone.quaternion.slerp(gltfRotation(entry, target, gltfReference.get(name)!), follow);
           }
           else {
             const entry = mmdBones.get(name);

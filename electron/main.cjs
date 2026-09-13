@@ -12,6 +12,7 @@ let companion, settingsWindow, tray, drag, pointerTimer, statusTimer, saveTimer,
 let hitRegions = [], ignoresMouse = false;
 const session = new ChatSession();
 const productionURL = pathToFileURL(path.join(__dirname, '../dist/index.html')).href;
+const appIcon = path.join(__dirname, '../dist/app-icon.png');
 const devURL = process.env.MATE_DEV_URL === 'http://127.0.0.1:5173' ? 'http://127.0.0.1:5173/' : null;
 if (process.env.MATE_TEST_USER_DATA) app.setPath('userData', path.resolve(process.env.MATE_TEST_USER_DATA));
 function trusted(event) {
@@ -29,7 +30,7 @@ function openSettings() {
   const x = right + width <= area.x + area.width ? right : Math.max(area.x, model.x - width - 12);
   settingsWindow = new BrowserWindow({ x, y: Math.max(area.y, Math.min(model.y, area.y + area.height - height)), width, height,
     minWidth: Math.min(360, width), minHeight: Math.min(480, height), title: 'Mate · 설정', backgroundColor: '#fcfdf8',
-    autoHideMenuBar: true, alwaysOnTop: true,
+    autoHideMenuBar: true, alwaysOnTop: true, icon: appIcon,
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true },
   });
   settingsWindow.setAlwaysOnTop(true, 'screen-saver');
@@ -81,7 +82,7 @@ function show() {
   contentZoom = Math.min(1, uiScale);
   companion = new BrowserWindow({ ...bounds, useContentSize: true,
     frame: false, transparent: true, backgroundColor: '#00000000', hasShadow: false, resizable: false,
-    alwaysOnTop: true, skipTaskbar: true, title: 'Mate · ChatGPT 데스크톱 채팅',
+    alwaysOnTop: true, skipTaskbar: true, icon: appIcon, title: 'Mate · ChatGPT 데스크톱 채팅',
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), zoomFactor: contentZoom, contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false },
   });
   companion.setContentBounds(bounds);

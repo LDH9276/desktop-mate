@@ -1,6 +1,6 @@
 {
   "name": "desktop-mate",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "private": true,
   "description": "A small VRM desktop companion",
   "author": "Local",
@@ -8,7 +8,7 @@
   "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "tsc --noEmit && vite build && node scripts/build-bridge.mjs && node scripts/make-icon.mjs",
+    "build": "tsc --noEmit && node scripts/make-icon.mjs && vite build && node scripts/build-bridge.mjs",
     "start": "npm run build && electron .",
     "desktop": "electron .",
     "test": "node --test tests/*.test.mjs",
@@ -16,8 +16,9 @@
     "test:lighting": "node scripts/test-lighting.mjs",
     "test:chat-motion": "node scripts/test-chat-motion.mjs",
     "test:cloth": "node scripts/test-physics-settings.mjs",
-    "package:win": "npm run build && electron-packager . DesktopMate --platform=win32 --arch=x64 --out=release --overwrite --no-asar --ignore=\"^/(release|portable-release|tests|scripts|src|local-only|.npm-cache|artifacts|.env)\" --win32metadata.ProductName=DesktopMate --win32metadata.FileDescription=\"Mate ChatGPT Desktop Companion\" --win32metadata.CompanyName=Local",
-    "package:portable": "npm run build && electron-builder --win portable"
+    "package:win": "npm run build && electron-packager . DesktopMate --platform=win32 --arch=x64 --out=release --overwrite --no-asar --ignore=\"^/(release|portable-release|tests|scripts|src|local-only|.npm-cache|artifacts|.env)\" --win32metadata.ProductName=DesktopMate --win32metadata.FileDescription=\"Mate ChatGPT Desktop Companion\" --win32metadata.CompanyName=Local --icon=assets/icon.ico",
+    "package:portable": "npm run build && electron-builder --win portable",
+    "test:pmx": "node scripts/test-pmx-transparency.mjs"
   },
   "dependencies": {
     "@pixiv/three-vrm": "^3.4.0",
@@ -58,7 +59,8 @@
     ],
     "win": {
       "target": "portable",
-      "artifactName": "DesktopMate-${version}-portable.${ext}"
+      "artifactName": "DesktopMate-${version}-portable.${ext}",
+      "icon": "assets/icon.ico"
     }
   }
 }
