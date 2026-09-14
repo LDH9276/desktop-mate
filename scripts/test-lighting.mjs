@@ -73,7 +73,7 @@ try {
   await saturation.fill('2');
   await page.waitForFunction(() => document.querySelector('.avatar-renderer')?.dataset.saturation === '2');
   assert.equal(await page.locator('.avatar-renderer').evaluate(element => element.style.filter), 'brightness(1) saturate(2)');
-  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('mate.visual'))), { lighting: 1.5, brightness: 1, saturation: 2 });
+  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('mate.visual'))), { lighting: 1.5, brightness: 1, saturation: 2, shadow: .65 });
 
   await app.evaluate(({ app }) => app.quit()).catch(() => {});
   await app.close().catch(() => {});
@@ -88,7 +88,7 @@ try {
   assert.equal(await settings.getByLabel('조명 강도', { exact: true }).inputValue(), '1');
   assert.equal(await settings.getByLabel('명도', { exact: true }).inputValue(), '0.65');
   assert.equal(await settings.getByLabel('채도', { exact: true }).inputValue(), '1');
-  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('mate.visual'))), { lighting: 1, brightness: 0.65, saturation: 1 });
+  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('mate.visual'))), { lighting: 1, brightness: 0.65, saturation: 1, shadow: .65 });
   console.log(`Lighting, brightness, and saturation update in place, persist, and reset (${packaged ? 'packaged' : 'source'}): passed`);
 } finally {
   await app.evaluate(({ app }) => app.quit()).catch(() => {});

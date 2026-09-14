@@ -7,5 +7,8 @@ MMDPhysics adapter: three.js r169
 https://github.com/mrdoob/three.js/blob/r169/examples/jsm/animation/MMDPhysics.js
 License: MIT (THREE-LICENSE.txt)
 Mate modifications: resource disposal, freeing temporary native allocations,
-model-space stepping, hand/garment collision mask additions and limited
-secondary rotation for head ornaments.
+model-space stepping, corrected local/world quaternion composition, finer
+physics steps and solver iterations, temporal secondary-motion filtering,
+depth-scaled head ornament rotation, bounded fractional rotation blending,
+kinematic substep interpolation and secondary translation slew limits.
+Authored collision masks are retained.

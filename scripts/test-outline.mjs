@@ -25,7 +25,7 @@ try{
   await page.evaluate(()=>window.mate.setWindowScale(1));
   await page.getByRole('button',{name:'채팅 접기',exact:true}).dispatchEvent('click');
   await page.evaluate(()=>document.body.style.setProperty('background','#f5f5f2','important'));
-  for(const [id,label] of [['mate','Mate']]){
+  for(const [id,label] of [['syaoty','Syaoty']]){
     await page.getByRole('button',{name:'연결 및 설정',exact:true}).dispatchEvent('click');
     await page.getByRole('radio',{name:`${label} 모델 선택`,exact:true}).dispatchEvent('click');
     await page.waitForSelector(`.avatar-renderer[data-model="${id}"][data-loaded="true"]`,{timeout:60000});
@@ -80,7 +80,7 @@ try{
     }));
     assert.ok(actual.sameCanvas);assert.equal(actual.color,color);assert.equal(actual.thickness,thickness);
     assert.ok(Math.abs(actual.opacity-(thickness>0?1-transparency/100:0))<0.000001);
-    if(name!=='default')assert.deepEqual(actual.saved,{color,opacity:1-transparency/100,thickness});
+    if(name!=='default')assert.deepEqual(actual.saved,{color,opacity:1-transparency/100,thickness,mmdToon:false,mmdToonThickness:1,mmdToonColor:'#343941'});
     const picture=await capture(),changedPixels=pixelsChanged(bare,picture);
     if(name==='default'){defaultPixels=changedPixels;assert.ok(changedPixels>100);}
     if(name==='thick')assert.ok(changedPixels>defaultPixels*2,'larger thickness must enlarge the visible outline');
@@ -101,8 +101,8 @@ try{
   await restoredPage.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
   await new Promise(resolve=>setTimeout(resolve,150));
   writeFileSync(path.join(artifacts,`outline-${packaged?'packaged':'source'}-settings.png`),Buffer.from((await capture()).png,'base64'));
-  await restoredPage.getByRole('button',{name:'외곽선 초기화',exact:true}).dispatchEvent('click');
-  assert.deepEqual(await restoredPage.evaluate(()=>JSON.parse(localStorage.getItem('mate.outline'))),{color:'#343941',opacity:0.95,thickness:1});
+  await restoredPage.getByRole('button',{name:'모든 외곽선 초기화',exact:true}).dispatchEvent('click');
+  assert.deepEqual(await restoredPage.evaluate(()=>JSON.parse(localStorage.getItem('mate.outline'))),{color:'#343941',opacity:0.95,thickness:1,mmdToon:false,mmdToonThickness:1,mmdToonColor:'#343941'});
   assert.deepEqual(errors,[]);report.result='passed';console.log(JSON.stringify(report));
   writeFileSync(path.join(artifacts,`outline-${packaged?'packaged':'source'}.json`),JSON.stringify(report,null,2));
 }finally{await app.evaluate(({app})=>app.quit()).catch(()=>{});await app.close().catch(()=>{});}

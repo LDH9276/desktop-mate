@@ -27,7 +27,7 @@ for(const displayScale of [null,2]){
       if(displayScale)assert.ok(Math.abs(m.dpr-displayScale*zoom)<0.01,'Windows scale and app zoom applied once');
       report.cases.push({displayScale:displayScale??'system',zoom,...m});
     }
-    await page.waitForSelector('.avatar-renderer[data-model="mate"][data-model-license="DesktopMate-original"]');
+    await page.waitForSelector('.avatar-renderer[data-model="syaoty"][data-model-license="CC0-1.0"]');
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
     const mate=await measure();assert.equal(mate.ratio,mate.dpr);assert.ok(mate.ratio>1.5);
     report.cases.push({displayScale:displayScale??'system',zoom:2,...mate});

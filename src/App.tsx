@@ -22,13 +22,14 @@ const initial: ChatState = { status: 'disconnected', conversationId: null, title
 const labels = { disconnected: '연결 대기', connected: '연결됨', reconnecting: '대화 확인 중', sending: '전송 중', receiving: '답변 작성 중', uncertain: '확인 필요' };
 const actions: Record<string, string> = { idle: '잡아서 옮기기', held: '이동 중', dizzy: '어지러움 · 회복 중', happy: '쓰다듬기', wave: '인사', bow: '꾸벅 인사', surprise: '깜짝!', sleep: '꾸벅꾸벅', landing: '착지', thinking: '생각 중 · 답변 기다리는 중', talking: '답변 수신' };
 const builtInAvatars: AvatarModel[] = [
-  { id: 'mate', name: 'Mate', creator: 'DesktopMate', kind: 'procedural', url: '', loadingName: '메이트' },
+  { id: 'syaoty', name: 'Syaoty', creator: 'yomox9', kind: 'pmx', url: './models/syaoty/Syaoty_01_optimize.pmx', loadingName: '샤오티', license: 'CC0-1.0' },
 ];
+const defaultAvatarId = builtInAvatars[0].id;
 const connectionPreferenceVersion = '2';
 const conversationUrlPattern = /^https:\/\/chatgpt\.com\/(?:g\/[^/]+\/)?c\/[a-zA-Z0-9-]+(?:[?#].*)?$/i;
 function savedAvatar() {
   const saved = localStorage.getItem('mate.avatar');
-  return saved || 'mate';
+  return saved || defaultAvatarId;
 }
 function savedConversationUrl() {
   // Version 2 deliberately starts without a preconfigured conversation URL.
@@ -51,7 +52,9 @@ export function App() {
   const [pose, setPose] = useState('idle');
   const [chatOpen, setChatOpen] = useState(true);
   const [settings, setInlineSettings] = useState(settingsWindow);
-  function setSettings(open: boolean) {
+  const [settingsTab, setSettingsTab] = useState(() => localStorage.getItem('mate.settingsTab') || '모델설정');
+  function setSettings(open: boolean, tab?: string) {
+    if (tab) { setSettingsTab(tab); localStorage.setItem('mate.settingsTab', tab); }
     if (window.mate) {
       if (open) void window.mate.openSettings();
       else if (settingsWindow) void window.mate.closeSettings();
@@ -102,6 +105,7 @@ export function App() {
       setHairPhysicsWeight(loadPhysicsWeight('mate.hairPhysicsWeight'));
       setSensitivity(Number(localStorage.getItem('mate.sensitivity')) || 1);
       setConversationUrl(savedConversationUrl());
+      setSettingsTab(localStorage.getItem('mate.settingsTab') || '모델설정');
     };
     window.addEventListener('storage', sync);
     return () => window.removeEventListener('storage', sync);
@@ -114,7 +118,7 @@ export function App() {
       setImportedAvatars(models);
       const saved = savedAvatar();
       if (!builtInAvatars.some(model => model.id === saved) && !models.some(model => model.id === saved)) {
-        setAvatarId('mate'); setAppearance(loadAppearance('mate'));
+        setAvatarId(defaultAvatarId); setAppearance(loadAppearance(defaultAvatarId));
       }
     }).catch(error => { if (!disposed) setImportNotice(clean(error)); });
     return () => { disposed = true; };
@@ -238,9 +242,9 @@ export function App() {
       {!settingsWindow && <>
       {desktop && <WindowMoveBar />}
       {chatOpen ? <section className="chat-bubble" data-interactive aria-label="ChatGPT 미니 채팅">
-        <header className="chat-header"><span className="brand-mark"><PawPrint size={16} /></span><div><b>ChatGPT</b><span><i className={connected ? 'online' : ''} />{labels[state.status]}{state.conversationId && ' · 한 대화에 연결'}</span></div><button title="연결 설정" aria-label="연결 설정" onClick={() => { setError(''); setSettings(true); }}><Settings2 size={16} /></button><button title="채팅 접기" aria-label="채팅 접기" onClick={() => setChatOpen(false)}><Minus size={17} /></button></header>
+        <header className="chat-header"><span className="brand-mark"><PawPrint size={16} /></span><div><b>ChatGPT</b><span><i className={connected ? 'online' : ''} />{labels[state.status]}{state.conversationId && ' · 한 대화에 연결'}</span></div><button title="연결 설정" aria-label="연결 설정" onClick={() => { setError(''); setSettings(true, 'GPT연결'); }}><Settings2 size={16} /></button><button title="채팅 접기" aria-label="채팅 접기" onClick={() => setChatOpen(false)}><Minus size={17} /></button></header>
         <div className="message-log" ref={log} role="log" aria-live="polite" aria-label="ChatGPT 대화 내용">
-          {state.messages.length === 0 ? <div className="empty-chat"><span className="empty-icon"><MessageCircle size={26} strokeWidth={1.3} /></span><h2>열린 대화와 이어 보세요</h2><p>여기에 입력한 메시지를 ChatGPT에 보내고,<br />같은 대화의 답변을 가져옵니다.</p><button onClick={() => setSettings(true)}><Link2 size={14} />ChatGPT 대화 연결<ArrowUp size={13} className="rotate-arrow" /></button><span className="empty-note">일반 채팅 · 마우스 조작 없음</span></div> : state.messages.map(message => <article key={message.id} className={`message ${message.role}`}><span className="message-author">{message.role === 'assistant' ? 'ChatGPT' : '나'}{message.delivery === 'not_sent' && ' · 전송되지 않음'}{message.delivery === 'unknown' && ' · 전송 확인 필요'}{message.delivery === 'incomplete' && ' · 수신 미완료'}</span>{message.role === 'assistant' ? <MarkdownMessage content={message.content} /> : <p>{message.content}</p>}</article>)}
+          {state.messages.length === 0 ? <div className="empty-chat"><span className="empty-icon"><MessageCircle size={26} strokeWidth={1.3} /></span><h2>열린 대화와 이어 보세요</h2><p>여기에 입력한 메시지를 ChatGPT에 보내고,<br />같은 대화의 답변을 가져옵니다.</p><button onClick={() => setSettings(true, 'GPT연결')}><Link2 size={14} />ChatGPT 대화 연결<ArrowUp size={13} className="rotate-arrow" /></button><span className="empty-note">일반 채팅 · 마우스 조작 없음</span></div> : state.messages.map(message => <article key={message.id} className={`message ${message.role}`}><span className="message-author">{message.role === 'assistant' ? 'ChatGPT' : '나'}{message.delivery === 'not_sent' && ' · 전송되지 않음'}{message.delivery === 'unknown' && ' · 전송 확인 필요'}{message.delivery === 'incomplete' && ' · 수신 미완료'}</span>{message.role === 'assistant' ? <MarkdownMessage content={message.content} /> : <p>{message.content}</p>}</article>)}
           {(busy || state.status === 'reconnecting') && <div className="reply-status"><LoaderCircle size={13} className="spin" />{state.detail}</div>}
         </div>
         {(error || state.status === 'uncertain') && !settings && <div className="inline-error" role="alert">{error || state.detail}</div>}
@@ -250,7 +254,7 @@ export function App() {
 
       <div className={`character-stage ${chatOpen ? '' : 'chat-closed'}`} data-state={pose}>
         <div className="floor-shadow" /><div className="avatar-wrap" style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }}>
-          <Avatar key={avatar.id} behavior={behavior} model={avatar} compact zoom={appearance.zoom} proportions={appearance} outline={outline} lighting={visuals.lighting} brightness={visuals.brightness} saturation={visuals.saturation} physics={physics} physicsWeight={physicsWeight} hairPhysics={hairPhysics} hairPhysicsWeight={hairPhysicsWeight} onReady={() => setReady(true)} />
+          <Avatar key={avatar.id} behavior={behavior} model={avatar} compact zoom={appearance.zoom} proportions={appearance} outline={outline} lighting={visuals.lighting} brightness={visuals.brightness} saturation={visuals.saturation} shadow={visuals.shadow} physics={physics} physicsWeight={physicsWeight} hairPhysics={hairPhysics} hairPhysicsWeight={hairPhysicsWeight} onReady={() => setReady(true)} />
           {ready && <div className="character-touch" data-interactive role="button" tabIndex={0} aria-label="캐릭터 쓰다듬기 또는 잡아서 옮기기" title="톡 누르면 반응 · 꾹 잡으면 이동" onPointerDown={grab} onPointerMove={move} onPointerUp={release} onPointerCancel={release} onLostPointerCapture={() => { if (gesture.current) { gesture.current = null; window.mate?.endDrag(); behavior.current.release(Date.now()); } }} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); behavior.current.react('happy', Date.now()); } }} />}
           {behavior.current.dragging && <div className="scruff-hand"><Hand size={22} /></div>}
           {pose === 'dizzy' && <div className="dizzy-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span></div>}
@@ -269,10 +273,12 @@ export function App() {
       </>}
       {settings && <section className="settings-panel" data-interactive role="dialog" aria-modal={!settingsWindow} aria-labelledby="settings-title" onKeyDown={event => { if (event.key === 'Escape') setSettings(false); }}>
         <header><div><span className="eyebrow">MATE SETTINGS</span><h2 id="settings-title">캐릭터와 창 설정</h2></div><button autoFocus aria-label="설정 닫기" onClick={() => setSettings(false)}><X size={19} /></button></header>
-        <div className="settings-divider" />
-        {desktop && <WindowSizeSettings />}
+        <div className="settings-tabs" role="tablist" aria-label="설정 메뉴">{['채팅창', '모델설정', 'GPT연결'].map(tab => <button key={tab} role="tab" id={`tab-${tab}`} aria-controls={`panel-${tab}`} aria-selected={settingsTab === tab} tabIndex={settingsTab === tab ? 0 : -1} onClick={() => { setSettingsTab(tab); localStorage.setItem('mate.settingsTab', tab); }} onKeyDown={event => { const tabs = ['채팅창', '모델설정', 'GPT연결']; const direction = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0; if (direction) { event.preventDefault(); const next = tabs[(tabs.indexOf(tab) + direction + 3) % 3]; setSettingsTab(next); document.getElementById(`tab-${next}`)?.focus(); } }}>{tab}</button>)}</div>
+        <div role="tabpanel" id="panel-채팅창" aria-labelledby="tab-채팅창" hidden={settingsTab !== '채팅창'}>
         <ChatAppearanceSettings value={chatAppearance} onChange={changeChatAppearance} />
-        <div className="settings-divider" />
+        </div>
+        <div role="tabpanel" id="panel-모델설정" aria-labelledby="tab-모델설정" hidden={settingsTab !== '모델설정'}>
+        {desktop && <WindowSizeSettings />}
         <fieldset className="model-picker"><legend>캐릭터 모델</legend><div>{avatars.map(candidate => <button key={candidate.id} type="button" role="radio" aria-checked={avatarId === candidate.id} aria-label={`${candidate.name} 모델 선택`} className={avatarId === candidate.id ? 'selected' : ''} onClick={() => chooseAvatar(candidate.id)}><span className={`model-swatch ${candidate.id}`} /><span><b>{candidate.name}</b><small>{candidate.kind.toUpperCase()}</small></span>{avatarId === candidate.id && <Check size={14} />}</button>)}</div></fieldset>
         <button className="model-import" type="button" disabled={importing} onClick={() => void importZip()}>{importing ? <LoaderCircle size={15} className="spin" /> : <FileArchive size={15} />}{importing ? 'ZIP 모델 불러오는 중…' : '3D 모델 ZIP 불러오기'}</button>
         <p className="model-import-hint">PMX·VRM 또는 Blender에서 내보낸 GLB가 든 ZIP을 선택하세요.<br />Mate 실행 파일 옆에 ZIP을 놓아도 자동으로 추가됩니다.</p>
@@ -292,12 +298,13 @@ export function App() {
         <fieldset className="lighting-settings">
           <legend>캐릭터 조명과 색상</legend>
           {visualRanges.map(({ key, label, min, max, step }) => <NumericSetting key={key} id={`visual-${key}`} label={label} value={visuals[key]} min={min} max={max} step={step} displayScale={100} unit="%" onChange={next => { const value: VisualSettings = { ...visuals, [key]: next }; setVisuals(value); saveVisualSettings(value); }} />)}
-          <p className="appearance-hint">조명·명도 0–150% · 채도 0–200%<br />채도 0%는 흑백이며 모든 모델에 공통 적용됩니다.</p>
+          <p className="appearance-hint">그림자 0%는 끄기, 100%는 진하게 표현합니다.<br />PMX 눈동자는 그림자를 받지 않습니다. 그림자는 PMX 모델에 적용됩니다.</p>
           <button type="button" className="appearance-reset" onClick={() => { const value = { ...defaultVisualSettings }; setVisuals(value); saveVisualSettings(value); }}><RotateCcw size={12} />조명과 색상 초기화</button>
         </fieldset>
         <NumericSetting id="shake" label="흔들림 민감도" value={sensitivity} min={0.5} max={1.5} step={0.01} displayScale={100} unit="%" onChange={value => { setSensitivity(value); localStorage.setItem('mate.sensitivity', String(value)); }} />
-        <OutlineSettings value={outline} onChange={value => { setOutline(value); localStorage.setItem('mate.outline', JSON.stringify(value)); }} />
-        <div className="settings-divider" />
+        <OutlineSettings value={outline} supportsMmdToon={avatar.kind === 'pmx'} onChange={value => { setOutline(value); localStorage.setItem('mate.outline', JSON.stringify(value)); }} />
+        </div>
+        <div role="tabpanel" id="panel-GPT연결" aria-labelledby="tab-GPT연결" hidden={settingsTab !== 'GPT연결'}>
         <h3 className="appearance-heading">ChatGPT 연결</h3>
         <p className="settings-intro">Chrome에서 연결할 ChatGPT 대화 탭을 열어 두세요.<br />다른 탭을 보고 있어도 아래 주소로 정확히 찾습니다.</p>
         <label className="conversation-url-label" htmlFor="conversation-url">ChatGPT 대화 주소</label>
@@ -308,7 +315,8 @@ export function App() {
         {state.conversationId && <div className="bound-session"><span><i className={connected ? 'online' : ''} />대화 {state.conversationId.slice(0, 8)}…</span><button disabled={busy || scanning} onClick={async () => { try { await window.mate?.disconnect(); } catch (error) { setError(clean(error)); } }}><Unplug size={13} />연결 해제</button></div>}
         {error && <p className="inline-error" role="alert">{error}</p>}
         <p className="compatibility-note">주소는 이 PC의 Mate 설정에만 저장됩니다. 해당 탭을 닫거나 다른 대화로 이동하면 전송 전에 확인을 멈춥니다. 최소화 중 대화를 읽지 못하면 Chrome 창을 복원해 주세요. 같은 대화를 확인한 뒤 답변을 이어 받습니다.</p>
-        <footer><span>{avatar.name} · {avatar.creator}<br /><small>Version 0.5.0 · 로컬 실행</small></span><button aria-label="프로그램 종료" onClick={() => window.mate?.quit()}><Power size={15} />종료</button></footer>
+        </div>
+        <footer><span>{avatar.name} · {avatar.creator}<br /><small>Version 0.6.11 · 로컬 실행</small></span><button aria-label="프로그램 종료" onClick={() => window.mate?.quit()}><Power size={15} />종료</button></footer>
       </section>}
       {desktop && !settingsWindow && <WindowResizeHandles />}
     </div>

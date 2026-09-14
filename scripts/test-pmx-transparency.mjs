@@ -33,9 +33,25 @@ try{
       reports.push({compositing:pixels});
     }
     for(const [name,angle] of [['front',0],['side',.65],['opposite',-.65]]){
-      await page.evaluate(angle=>window.draw(angle),angle);
+      await page.evaluate(angle=>window.draw(angle,false),angle);
       await page.screenshot({path:path.join(artifacts,`${fixed?'after':'before'}-${name}.png`)});
       if(name==='side')await page.screenshot({path:path.join(artifacts,`${fixed?'after':'before'}-shoulder.png`),clip:{x:170,y:280,width:540,height:350}});
+    }
+    if(fixed){
+      for(const [name,angle] of [['front',0],['side',.65]]){
+        await page.evaluate(angle=>window.draw(angle,true),angle);
+        await page.screenshot({path:path.join(artifacts,`toon-on-${name}.png`)});
+      }
+      await page.evaluate(()=>window.draw(0,true));
+      await page.screenshot({path:path.join(artifacts,'toon-on-face.png'),clip:{x:245,y:40,width:410,height:390}});
+      await page.evaluate(()=>window.draw(0,false));
+      await page.screenshot({path:path.join(artifacts,'toon-off-face.png'),clip:{x:245,y:40,width:410,height:390}});
+      for(const [name,scale] of [['thin',.25],['thick',3]]){
+        await page.evaluate(scale=>window.draw(0,true,scale),scale);
+        await page.screenshot({path:path.join(artifacts,`toon-${name}-face.png`),clip:{x:245,y:40,width:410,height:390}});
+      }
+      await page.evaluate(()=>window.draw(0,true,1.75,'#2457d6'));
+      await page.screenshot({path:path.join(artifacts,'toon-blue-face.png'),clip:{x:245,y:40,width:410,height:390}});
     }
   }
   writeFileSync(path.join(artifacts,'materials.json'),JSON.stringify(reports,null,2));console.log(JSON.stringify({result:'passed',artifacts,model:model.name}));

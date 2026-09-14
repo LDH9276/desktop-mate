@@ -10,6 +10,11 @@ mkdirSync(artifacts,{recursive:true});
 const testUserData=mkdtempSync(path.join(artifacts,'window-smoke-'));
 mkdirSync(testUserData,{recursive:true});
 const env={...process.env,MATE_TEST_USER_DATA:testUserData};delete env.ELECTRON_RUN_AS_NODE;
+const closeSettings=async settings=>{
+  const closed=settings.waitForEvent('close');
+  await settings.getByRole('button',{name:'설정 닫기',exact:true}).dispatchEvent('click').catch(()=>{});
+  await closed;
+};
 let app=await electron.launch({args:[root],env,timeout:30000});
 try {
   const page=await app.firstWindow();
@@ -47,7 +52,7 @@ try {
   await settings.getByRole('spinbutton',{name:'위아래 위치 값',exact:true}).fill('300');
   await settings.getByRole('spinbutton',{name:'위아래 위치 값',exact:true}).press('Tab');
   await page.waitForFunction(()=>JSON.parse(document.querySelector('.avatar-renderer').dataset.proportions).offsetY===3);
-  await settings.getByRole('button',{name:'설정 닫기',exact:true}).dispatchEvent('click');
+  await closeSettings(settings);
   const portraitDisplay=await app.evaluate(({screen})=>screen.getAllDisplays().find(display=>display.workArea.width>=1170&&display.workArea.height>=2160)?.workArea ?? null);
   if (portraitDisplay) {
     await app.evaluate(({BrowserWindow}, area)=>BrowserWindow.getAllWindows()[0].setContentBounds({x:area.x,y:area.y,width:1170,height:2160}),portraitDisplay);
@@ -89,9 +94,9 @@ try {
   await page.waitForFunction(()=>JSON.parse(document.querySelector('.avatar-renderer').dataset.proportions).width===0.8);
   assert.equal(await settings.getByRole('slider',{name:'세로 비율',exact:false}).inputValue(),'1.1');
   await settings.screenshot({path:path.join(artifacts,'settings.png'),omitBackground:true});
-  await page.waitForSelector('.avatar-renderer[data-model="mate"][data-loaded="true"][data-model-license="DesktopMate-original"]');
+  await page.waitForSelector('.avatar-renderer[data-model="syaoty"][data-loaded="true"][data-model-license="CC0-1.0"][data-physics="active"]',{timeout:60000});
   await page.waitForFunction(()=>JSON.parse(document.querySelector('.avatar-renderer').dataset.proportions).width===0.8);
-  await settings.getByRole('button',{name:'설정 닫기',exact:true}).dispatchEvent('click');
+  await closeSettings(settings);
   await page.getByRole('button',{name:'채팅 접기',exact:true}).dispatchEvent('click');
   assert.equal(await page.locator('.chat-bubble').count(),0);
   await page.getByRole('button',{name:'ChatGPT 열기',exact:true}).dispatchEvent('click');
@@ -117,7 +122,7 @@ try {
   for(const key of ['width','height','x','y']) assert.ok(Math.abs(restored[key]-saved[key])<=1,`restored ${key}`);
   await reopened.waitForFunction(()=>JSON.parse(document.querySelector('.avatar-renderer').dataset.proportions).width===0.8);
   await reopened.screenshot({path:path.join(artifacts,'window-controls.png'),omitBackground:true});
-  console.log('UI smoke passed: topmost state across focus and hide/show; size presets; keyboard move; corner resize; original procedural Mate; window bounds and model proportions survive restart; chat/reaction regressions. No ChatGPT message was sent.');
+  console.log('UI smoke passed: topmost state across focus and hide/show; size presets; keyboard move; corner resize; bundled CC0 Syaoty PMX with physics; window bounds and model proportions survive restart; chat/reaction regressions. No ChatGPT message was sent.');
 } finally {
   try { await app.evaluate(({ app }) => app.quit()); } catch {}
   await app.close().catch(() => {});

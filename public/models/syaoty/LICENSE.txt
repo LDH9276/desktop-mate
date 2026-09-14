@@ -1,0 +1,19 @@
+Syaoty_01 model distribution notice
+
+Model: Syaoty_01 (Normal_cc0), version 01
+Author: yomox9
+Source: https://booth.pm/en/items/2276392
+Original archive: Syaoty_01.zip
+Original archive SHA-256: 23441EA85CE3115E085FD6FBA2CF8FEABC149FF47C12C9F6273692B2D9D8C65F
+
+License: CC0 1.0 Universal
+License text: https://creativecommons.org/publicdomain/zero/1.0/
+
+The official source marks the Normal_cc0 download as CC0 and states that it
+contains a PMX model for MMD. The PMX metadata also identifies yomox9 as the
+author, declares CC0, allows everyone to use it, and permits commercial use.
+Do not misrepresent the model's author.
+
+DesktopMate includes only Syaoty_01_optimize.pmx and the texture files that it
+references. The VRM, VRoid source, screenshots, and the separately published
+dress1_not_CC0 package are not included.

@@ -4,7 +4,9 @@ release/
 portable-release/
 .git/
 .env
-public/models/
+public/models/*
+!public/models/syaoty/
+!public/models/syaoty/**
 assets/licenses/
 artifacts/
 distribution/

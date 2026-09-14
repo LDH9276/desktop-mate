@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type MutableRefObject } from 'react
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MMDLoader } from 'three/addons/loaders/MMDLoader.js';
+import { OutlineEffect } from './vendor/PmxOutlineEffect.js';
 import { VRMLoaderPlugin, VRMUtils, type VRM, type VRMHumanBoneName } from '@pixiv/three-vrm';
 import { CompanionBehavior, clamp } from './behavior.mjs';
 import { VmdBodyMotion, jointBlend } from './motion.mjs';
@@ -13,6 +14,7 @@ import { defaultAppearance, type Appearance } from './appearance';
 import { defaultOutline, type OutlineStyle } from './outline';
 import { defaultVisualSettings } from './lighting';
 import { configurePmxMaterials } from './pmx-materials.mjs';
+import { createPmxShading } from './pmx-shading.mjs';
 
 export type AvatarModel = {
   id: string;
@@ -21,6 +23,7 @@ export type AvatarModel = {
   kind: 'vrm' | 'pmx' | 'gltf' | 'procedural';
   url: string;
   loadingName: string;
+  license?: string;
 };
 
 function createMateCharacter() {
@@ -80,6 +83,7 @@ type Props = {
   lighting?: number;
   brightness?: number;
   saturation?: number;
+  shadow?: number;
   physics?: boolean;
   physicsWeight?: number;
   hairPhysics?: boolean;
@@ -91,16 +95,18 @@ function disposeObject(root: THREE.Object3D) {
   VRMUtils.deepDispose(root);
 }
 
-export function Avatar({ behavior, model, compact = false, paused = false, zoom = 1, proportions = defaultAppearance, outline = defaultOutline, lighting = defaultVisualSettings.lighting, brightness = defaultVisualSettings.brightness, saturation = defaultVisualSettings.saturation, physics = true, physicsWeight = 0.35, hairPhysics = true, hairPhysicsWeight = 0.35, onReady }: Props) {
+export function Avatar({ behavior, model, compact = false, paused = false, zoom = 1, proportions = defaultAppearance, outline = defaultOutline, lighting = defaultVisualSettings.lighting, brightness = defaultVisualSettings.brightness, saturation = defaultVisualSettings.saturation, shadow = defaultVisualSettings.shadow, physics = true, physicsWeight = 0.35, hairPhysics = true, hairPhysicsWeight = 0.35, onReady }: Props) {
   const outlineId = `mate-outline-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const host = useRef<HTMLDivElement>(null);
-  const settings = useRef({ paused, zoom, proportions, lighting, brightness, saturation, physics, physicsWeight, hairPhysics, hairPhysicsWeight }); settings.current = { paused, zoom, proportions, lighting, brightness, saturation, physics, physicsWeight, hairPhysics, hairPhysicsWeight };
+  const settings = useRef({ paused, zoom, proportions, lighting, brightness, saturation, shadow, physics, physicsWeight, hairPhysics, hairPhysicsWeight, mmdToon: outline.mmdToon, mmdToonThickness: outline.mmdToonThickness, mmdToonColor: outline.mmdToonColor }); settings.current = { paused, zoom, proportions, lighting, brightness, saturation, shadow, physics, physicsWeight, hairPhysics, hairPhysicsWeight, mmdToon: outline.mmdToon, mmdToonThickness: outline.mmdToonThickness, mmdToonColor: outline.mmdToonColor };
   const readyCallback = useRef(onReady); readyCallback.current = onReady;
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const el = host.current!;
+    if (model.license) el.dataset.modelLicense = model.license;
+    else delete el.dataset.modelLicense;
     let grants: ReturnType<typeof createMmdGrantUpdater> | null = null;
     let cloth: ReturnType<typeof createMmdPhysics> | null = null;
     let renderer: THREE.WebGLRenderer;
@@ -110,6 +116,7 @@ export function Avatar({ behavior, model, compact = false, paused = false, zoom 
     catch { setError('3D 화면을 시작할 수 없어요. 그래픽 드라이버를 확인해 주세요.'); return; }
     renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
+    const mmdOutlineEffect = new OutlineEffect(renderer, { defaultThickness: 0.003, defaultColor: [0.06, 0.06, 0.08], defaultAlpha: 1 });
     // Outline the rendered alpha silhouette so VRM and PMX hair, transparent
     // textures and animated limbs share one consistent stroke. The browser
     // scales the CSS-pixel stroke with HiDPI, preserving the model's colors.
@@ -122,15 +129,21 @@ export function Avatar({ behavior, model, compact = false, paused = false, zoom 
     const ambient = new THREE.HemisphereLight(0xffffff, 0xc3b4a3, 2); scene.add(ambient);
     const light = new THREE.DirectionalLight(0xfff5e9, 2.4); light.position.set(-2, 4, 5); scene.add(light);
     const fill = new THREE.DirectionalLight(0xf0eeff, 1.3); fill.position.set(3, 2, -3); scene.add(fill);
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    light.shadow.mapSize.set(2048, 2048); light.shadow.bias = -0.00003; light.shadow.normalBias = .002;
+    light.shadow.camera.near = .1; light.shadow.camera.far = 30; scene.add(light.target);
+    let shading: ReturnType<typeof createPmxShading> | undefined, renderedShadow = -1;
     const presentation = new THREE.Group(); scene.add(presentation);
     const pivot = new THREE.Group(); presentation.add(pivot);
     let vrm: VRM | undefined;
     let mmd: THREE.SkinnedMesh | undefined;
+    const mmdOutlineThickness = new Map<THREE.Material, number>();
     let proceduralBones = new Map<string, THREE.Object3D>();
     let gltfBones: ReturnType<typeof createGltfRig> = new Map();
     const gltfReference = new Map<string, THREE.Quaternion>();
     let modelRoot: THREE.Object3D | undefined;
-    let disposed = false, frame = 0, lastFrame = 0, neckY = 1.4, motionTime = 0, renderedLighting = -1, renderedFilter = '';
+    let disposed = false, frame = 0, lastFrame = 0, neckY = 1.4, motionTime = 0, renderedLighting = -1, renderedFilter = '', renderedMmdOutlineColor = '', renderedMmdOutlineScale = -1;
+    const mmdOutlineColor = new THREE.Color();
     let mmdBones: ReturnType<typeof createMmdRig> = new Map();
     const clips = new Map<string, VmdBodyMotion>();
     const feet: THREE.Object3D[] = [];
@@ -216,7 +229,6 @@ export function Avatar({ behavior, model, compact = false, paused = false, zoom 
       for (const name of ['leftFoot', 'rightFoot']) {
         const foot = proceduralBones.get(name); if (foot) feet.push(foot);
       }
-      el.dataset.modelLicense = 'DesktopMate-original';
       attach(mate.root, mate.neck);
     } else if (model.kind === 'vrm') {
       const loader = new GLTFLoader();
@@ -242,10 +254,16 @@ export function Avatar({ behavior, model, compact = false, paused = false, zoom 
         if (disposed) { disposeObject(mesh); return; }
         mmd = mesh;
         configurePmxMaterials(mesh);
+        for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
+          const value = material.userData.outlineParameters?.thickness;
+          if (typeof value === 'number') mmdOutlineThickness.set(material, value);
+        }
         mmdBones = createMmdRig(mesh);
         grants = createMmdGrantUpdater(mesh);
         el.dataset.mmdGrants = String(grants.count);
         attach(mesh, mmdBones.get('neck')?.bone);
+        shading = createPmxShading(mesh);
+        el.dataset.unshadowedEyeMaterials = String(shading.eyeMaterials);
         el.dataset.physics = 'loading';
         loadAmmo().then(() => {
           if (disposed) return;
@@ -348,12 +366,20 @@ export function Avatar({ behavior, model, compact = false, paused = false, zoom 
       }
       const { width, height, offsetY, rotation } = settings.current.proportions;
       const { lighting: lightLevel, brightness: brightnessLevel, saturation: saturationLevel } = settings.current;
-      if (renderedLighting !== lightLevel) {
-        ambient.intensity = 2 * lightLevel;
-        light.intensity = 2.4 * lightLevel;
-        fill.intensity = 1.3 * lightLevel;
+      const shadowStrength = shading ? settings.current.shadow : 0;
+      if (renderedLighting !== lightLevel || renderedShadow !== shadowStrength) {
+        ambient.intensity = (2 - 1.1 * shadowStrength) * lightLevel;
+        light.intensity = (2.4 + .3 * shadowStrength) * lightLevel;
+        fill.intensity = (1.3 - .65 * shadowStrength) * lightLevel;
+        ambient.color.set(0xffffff).lerp(new THREE.Color('#c7ccef'), shadowStrength);
+        light.color.set(0xfff5e9).lerp(new THREE.Color('#ffecd7'), shadowStrength);
+        light.castShadow = renderer.shadowMap.enabled = shadowStrength > 0;
+        light.shadow.intensity = shadowStrength;
+        shading?.update(shadowStrength);
+        renderedShadow = shadowStrength;
         renderedLighting = lightLevel;
       }
+      el.dataset.shadow = String(shadowStrength);
       // Final-output controls remain effective for emissive and custom toon
       // materials whose color may not respond strongly to scene lighting.
       const filter = `brightness(${brightnessLevel}) saturate(${saturationLevel})`;
@@ -364,12 +390,30 @@ export function Avatar({ behavior, model, compact = false, paused = false, zoom 
       presentation.scale.set(width, height, width);
       presentation.position.y = offsetY;
       presentation.rotation.y = THREE.MathUtils.degToRad(rotation);
+      if (shadowStrength > 0) {
+        const radius = Math.max(width, height) * 1.2;
+        light.target.position.set(0, height + offsetY, 0);
+        light.position.copy(light.target.position).add(new THREE.Vector3(-3, 4, 3));
+        Object.assign(light.shadow.camera, { left: -radius, right: radius, top: radius, bottom: -radius });
+        light.shadow.camera.updateProjectionMatrix();
+      }
       el.dataset.proportions = JSON.stringify({ zoom: settings.current.zoom, width, height, offsetY, rotation });
       el.dataset.lighting = String(lightLevel);
       el.dataset.brightness = String(brightnessLevel);
       el.dataset.saturation = String(saturationLevel);
       camera.zoom = settings.current.zoom; camera.updateProjectionMatrix();
-      renderer.render(scene, camera);
+      const showMmdToon = model.kind === 'pmx' && settings.current.mmdToon;
+      if (mmd && (renderedMmdOutlineScale !== settings.current.mmdToonThickness || renderedMmdOutlineColor !== settings.current.mmdToonColor)) {
+        const color = mmdOutlineColor.set(settings.current.mmdToonColor).toArray();
+        for (const [material, original] of mmdOutlineThickness) {
+          material.userData.outlineParameters.thickness = original * settings.current.mmdToonThickness;
+          material.userData.outlineParameters.color = color;
+        }
+        renderedMmdOutlineScale = settings.current.mmdToonThickness;
+        renderedMmdOutlineColor = settings.current.mmdToonColor;
+      }
+      if (showMmdToon) mmdOutlineEffect.render(scene, camera);
+      else renderer.render(scene, camera);
     };
     frame = requestAnimationFrame(animate);
     return () => {
@@ -377,12 +421,14 @@ export function Avatar({ behavior, model, compact = false, paused = false, zoom 
       window.removeEventListener('resize', resize);
       window.removeEventListener('blur', resetPointer); document.removeEventListener('pointerleave', resetPointer);
       cloth?.dispose();
+      mmdOutlineEffect.dispose();
+      light.shadow.map?.dispose();
       if (modelRoot) disposeObject(modelRoot);
       renderer.dispose(); renderer.forceContextLoss(); renderer.domElement.remove();
     };
   }, [behavior, compact, model.id, outlineId]);
 
-  return <div className="avatar-renderer" ref={host} aria-label={`${model.name} 3D 캐릭터`} data-model={model.id} data-outline="silhouette">
+  return <div className="avatar-renderer" ref={host} aria-label={`${model.name} 3D 캐릭터`} data-model={model.id} data-outline="silhouette" data-mmd-toon-outline={String(model.kind === 'pmx' && outline.mmdToon)} data-mmd-toon-thickness={outline.mmdToonThickness} data-mmd-toon-color={outline.mmdToonColor}>
     <svg width="0" height="0" aria-hidden="true" focusable="false" style={{ position: 'absolute', pointerEvents: 'none' }}>
       <defs><filter id={outlineId} x="-5%" y="-5%" width="110%" height="110%" colorInterpolationFilters="sRGB">
         <feMorphology in="SourceAlpha" operator="dilate" radius={outline.thickness} result="expanded" />

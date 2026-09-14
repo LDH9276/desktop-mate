@@ -18,7 +18,7 @@ async function openSettings(page) {
   const settings = await opened; watch(settings);
   await settings.waitForSelector('.settings-panel'); return settings;
 }
-const range = async (page, label, value) => page.getByRole('slider', { name: label, exact: true }).fill(String(value));
+const range = async (page, label, value) => page.getByRole('slider', { name: label, exact: true }).fill(String(value / 100));
 try {
   let page = await app.firstWindow(); watch(page);
   await page.waitForSelector('.avatar-renderer[data-loaded="true"]', { timeout: 60000 });
@@ -63,13 +63,13 @@ try {
   await settings.getByRole('button', { name: '설정 닫기', exact: true }).click();
   await expect.poll(() => app.windows().length).toBe(1); assert.equal(page.isClosed(), false);
   settings = await openSettings(page);
-  await expect(settings.getByRole('slider', { name: '의상 물리 가중치', exact: true })).toHaveValue('18');
+  await expect(settings.getByRole('slider', { name: '의상 물리 가중치', exact: true })).toHaveValue('0.18');
   await settings.getByRole('checkbox', { name: '머리카락 물리', exact: true }).uncheck();
   await app.close(); app = await launch(); page = await app.firstWindow(); watch(page);
   await expect(page.locator('.avatar-renderer')).toHaveAttribute('data-physics-weight', '0.18', { timeout: 60000 });
   await expect(page.locator('.avatar-renderer')).toHaveAttribute('data-hair-physics-weight', '0');
   settings = await openSettings(page);
-  await expect(settings.getByRole('slider', { name: '머리카락 물리 가중치', exact: true })).toHaveValue('62');
+  await expect(settings.getByRole('slider', { name: '머리카락 물리 가중치', exact: true })).toHaveValue('0.62');
   await expect(settings.getByRole('checkbox', { name: '머리카락 물리', exact: true })).not.toBeChecked();
   assert.deepEqual(errors, []); assert.deepEqual(failed, []);
   writeFileSync(path.join(out, `result-${suffix}.json`), JSON.stringify({ passed: true, packaged, separateSettingsWindow: true, independentPhysics: true, sameCanvas: true, persisted: true, realGptMessages: 0 }, null, 2));

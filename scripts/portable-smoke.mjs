@@ -26,7 +26,7 @@ try {
   await settings.waitForSelector('.settings-panel');
   await settings.getByRole('button',{name:'창 크기 150%',exact:true}).dispatchEvent('click');
   await expect.poll(()=>page.evaluate(async()=>Math.abs((await window.mate.windowState()).scale-1.5))).toBeLessThan(0.01);
-  await page.waitForSelector('.avatar-renderer[data-model="mate"][data-loaded="true"][data-model-license="DesktopMate-original"]');
+  await page.waitForSelector('.avatar-renderer[data-model="syaoty"][data-loaded="true"][data-model-license="CC0-1.0"][data-physics="active"]',{timeout:60000});
   await settings.getByRole('group',{name:'모델 비율 프리셋'}).getByRole('button',{name:'통통',exact:true}).dispatchEvent('click');
   await page.waitForFunction(()=>JSON.parse(document.querySelector('.avatar-renderer').dataset.proportions).width===1.25);
   await settings.screenshot({path:path.join(root,'artifacts',`portable-${packaged.version}-settings.png`),omitBackground:true});
@@ -36,5 +36,5 @@ try {
   const native=await app.evaluate(async({BrowserWindow})=>(await BrowserWindow.getAllWindows()[0].webContents.capturePage()).toDataURL());
   writeFileSync(path.join(root,'artifacts',`portable-${packaged.version}-native.png`),Buffer.from(native.split(',')[1],'base64'));
   await page.screenshot({path:path.join(root,'artifacts',`portable-${packaged.version}.png`),omitBackground:true});
-  console.log(JSON.stringify({version:packaged.version,window:await page.evaluate(()=>window.mate.windowState()),model:'mate',modelLicense:'DesktopMate-original',topmostMoveAndModelControls:'passed'}));
+  console.log(JSON.stringify({version:packaged.version,window:await page.evaluate(()=>window.mate.windowState()),model:'syaoty',modelLicense:'CC0-1.0',topmostMoveAndModelControls:'passed'}));
 }finally{await app.evaluate(({app})=>app.quit()).catch(()=>{});await app.close().catch(()=>{});}

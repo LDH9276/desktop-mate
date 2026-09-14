@@ -1,6 +1,6 @@
 {
   "name": "desktop-mate",
-  "version": "0.6.5",
+  "version": "0.6.11",
   "private": true,
   "description": "A small VRM desktop companion",
   "author": "Local",
@@ -18,7 +18,8 @@
     "test:cloth": "node scripts/test-physics-settings.mjs",
     "package:win": "npm run build && electron-packager . DesktopMate --platform=win32 --arch=x64 --out=release --overwrite --no-asar --ignore=\"^/(release|portable-release|tests|scripts|src|local-only|.npm-cache|artifacts|.env)\" --win32metadata.ProductName=DesktopMate --win32metadata.FileDescription=\"Mate ChatGPT Desktop Companion\" --win32metadata.CompanyName=Local --icon=assets/icon.ico",
     "package:portable": "npm run build && electron-builder --win portable",
-    "test:pmx": "node scripts/test-pmx-transparency.mjs"
+    "test:pmx": "node scripts/test-pmx-transparency.mjs",
+    "test:mmd-outline": "node scripts/test-mmd-toon-outline.mjs"
   },
   "dependencies": {
     "@pixiv/three-vrm": "^3.4.0",

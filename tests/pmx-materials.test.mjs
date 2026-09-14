@@ -1,10 +1,37 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DataTexture, MeshToonMaterial, CustomBlending, SrcAlphaFactor, DstAlphaFactor, NormalBlending } from 'three';
-import { configurePmxMaterials } from '../src/pmx-materials.mjs';
+import { BufferGeometry, Float32BufferAttribute, DataTexture, MeshToonMaterial, CustomBlending, SrcAlphaFactor, DstAlphaFactor, NormalBlending } from 'three';
+import { configurePmxMaterials, findPmxOverlays } from '../src/pmx-materials.mjs';
 
 const texture = alpha => new DataTexture(new Uint8Array([255,255,255,alpha]),1,1);
 const material = options => new MeshToonMaterial({blending:CustomBlending,blendSrcAlpha:SrcAlphaFactor,blendDstAlpha:DstAlphaFactor,...options});
+
+const layeredGeometry = () => {
+  const g=new BufferGeometry();
+  g.setAttribute('position',new Float32BufferAttribute([0,0,0,1,0,0,0,1,0,0,0,0,1,0,0,0,1,0],3));
+  g.setIndex([0,1,2,3,4,5]);g.addGroup(0,3,0);g.addGroup(3,3,1);
+  return g;
+};
+
+test('coincident alpha highlights do not write depth or duplicate the base outline', () => {
+  const geometry=layeredGeometry(),base=material({map:texture(255)}),map=texture(128),overlay=material({map});
+  base.userData.outlineParameters={visible:true};overlay.userData.outlineParameters={visible:true};
+  map.readyCallbacks=[];
+  configurePmxMaterials({geometry,material:[base,overlay]});
+  for(const callback of map.readyCallbacks)callback(map);
+  assert.equal(base.depthWrite,true);assert.equal(base.userData.outlineParameters.visible,true);
+  assert.equal(overlay.depthWrite,false);assert.equal(overlay.userData.outlineParameters.visible,false);
+  assert.equal(overlay.userData.pmxOverlayOf,0);assert.equal(overlay.polygonOffset,true);
+});
+
+test('coincident rest poses with different skinning or morphs remain separate surfaces', () => {
+  const geometry=layeredGeometry();
+  geometry.setAttribute('skinIndex',new Float32BufferAttribute([0,0,0,1,1,1],1));
+  assert.equal(findPmxOverlays({geometry}).size,0);
+  geometry.deleteAttribute('skinIndex');
+  geometry.morphAttributes.position=[new Float32BufferAttribute([0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0],3)];
+  assert.equal(findPmxOverlays({geometry}).size,0);
+});
 
 test('late shared PMX alpha textures update every material, including unflagged texture alpha', () => {
   const map=texture(0);map.readyCallbacks=[];

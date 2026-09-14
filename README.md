@@ -4,11 +4,11 @@
 
 [![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?logo=windows)](https://www.microsoft.com/windows/)
 [![Node.js](https://img.shields.io/badge/Node.js-22%20LTS-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
-[![Version](https://img.shields.io/badge/version-0.6.5-6b8559)](./package.json)
+[![Version](https://img.shields.io/badge/version-0.6.11-6b8559)](./package.json)
 
 Mate는 화면 위에 항상 떠 있는 작은 캐릭터와 미니 채팅창을 제공합니다. 별도의 API 키를 입력하는 방식이 아니라, 사용자가 Chrome에 열어 둔 **일반 ChatGPT 대화 하나**를 Windows 접근성 기능으로 연결합니다.
 
-기본 캐릭터 `Mate`는 Three.js 도형 코드로 만들어져 저장소에 별도 캐릭터 모델이나 텍스처가 포함되지 않습니다. 가지고 있는 PMX·VRM·GLB 캐릭터도 ZIP으로 불러올 수 있습니다.
+기본 캐릭터는 yomox9의 무료 아니메풍 MMD 모델 `Syaoty_01` Normal_cc0입니다. CC0로 자유롭게 사용할 수 있으며, 가지고 있는 PMX·VRM·GLB 캐릭터도 ZIP으로 불러올 수 있습니다.
 
 ## 목차
 
@@ -25,13 +25,14 @@ Mate는 화면 위에 항상 떠 있는 작은 캐릭터와 미니 채팅창을 
 
 - 투명한 **항상 위** 창과 화면 가장자리 크기 조절
 - 트레이 숨김, 다시 열기, 화면 밖으로 나간 창 복원
-- 기본 Mate의 시선, 대기, 생각, 인사, 쓰다듬기 반응
+- 기본 Syaoty의 시선, 대기, 생각, 인사, 쓰다듬기 반응과 PMX 물리
 - 답변 끝의 `현재상태: 화남` 같은 상태 태그를 이용한 감정 연출
 - 일반 ChatGPT 대화로 메시지 전송 및 답변 표시
 - 표, 목록, 제목, 코드 블록을 포함한 Markdown 답변 표시
 - PMX·VRM·GLB 모델의 로컬 ZIP 불러오기
 - PMX 의상·머리카락 물리 효과와 가중치 개별 설정
 - 모델 크기·비율, 조명, 명도, 채도, 외곽선 조절
+- PMX 모델의 재질별 카툰 외곽선 켜기·끄기, 색상과 굵기 조절
 - 채팅창의 크기·글꼴·글자 크기와 8가지 테마 색상 조절
 - 모든 범위형 설정의 숫자 직접 입력 및 1% 단위 조절
 - 창 위치, 캐릭터, 외형 설정 자동 저장
@@ -253,6 +254,7 @@ Mate는 결과를 확인하지 못한 메시지를 자동으로 다시 보내지
 | `npm run dev` | Vite 개발 서버 실행 |
 | `npm run test:ui` | Electron UI 스모크 테스트 |
 | `npm run test:pmx -- <모델-ZIP-경로>` | 로컬 PMX 정면·양측면 스크린샷과 알파/깊이 합성 회귀 확인 |
+| `npm run test:mmd-outline -- <모델-ZIP-경로>` | 실제 설정 창에서 PMX 카툰 외곽선 토글·색상·굵기와 저장 확인 |
 | `npm run package:portable` | Windows 포터블 실행 파일 생성 |
 
 개발 서버와 Electron을 함께 사용할 때는 터미널 두 개를 엽니다.
@@ -286,6 +288,7 @@ desktop-mate/
 ├─ electron/               Electron 창, 트레이, 모델 저장소와 IPC
 ├─ native/                 Windows UI Automation 기반 ChatGPT 연결 도우미
 ├─ public/motions/gene/    캐릭터 반응용 VMD 모션
+├─ public/models/syaoty/   CC0 기본 Syaoty PMX와 텍스처
 ├─ public/physics/         PMX 물리 실행 파일과 라이선스
 ├─ scripts/                빌드, 패키징, 검증 도구
 └─ tests/                  동작 및 회귀 테스트
@@ -294,7 +297,7 @@ desktop-mate/
 주요 파일:
 
 - `src/App.tsx`: 채팅, 설정, 로컬 연결 주소와 사용자 조작
-- `src/Avatar.tsx`: 기본 Mate와 가져온 모델 렌더링·애니메이션
+- `src/Avatar.tsx`: 기본 Syaoty와 가져온 모델 렌더링·애니메이션
 - `electron/main.cjs`: 투명 창, 항상 위, 트레이와 제한된 IPC
 - `electron/bridge.cjs`: 연결 상태, 전송 보호와 답변 수신
 - `electron/model-library.cjs`: 사용자 ZIP 검증과 로컬 모델 등록
@@ -306,10 +309,12 @@ desktop-mate/
 - ChatGPT 비밀번호, 세션 쿠키 또는 OpenAI API 키를 이 저장소에 저장하지 않습니다.
 - Mate는 사용자가 선택한 대화가 맞는지 전송 전에 확인합니다.
 - 이미 보낸 메시지의 결과가 불확실할 때 자동 재전송하지 않습니다.
-- 기본 배포에는 코드로 생성되는 Mate만 포함됩니다.
-- 외부 PMX·VRM·GLB, 모델 텍스처, 개인 대화 주소와 테스트 산출물은 `.gitignore`로 제외됩니다.
+- 기본 배포에는 CC0인 Syaoty Normal PMX와 그 모델이 참조하는 텍스처만 포함됩니다.
+- 사용자가 가져온 다른 PMX·VRM·GLB, 개인 대화 주소와 테스트 산출물은 `.gitignore`로 제외됩니다.
 
 ## 모션 및 물리 런타임 출처
+
+기본 캐릭터 Syaoty Normal은 yomox9가 [공식 BOOTH 배포 페이지](https://booth.pm/en/items/2276392)에서 CC0로 공개한 PMX 모델입니다. 원본 해시와 포함 범위는 [`public/models/syaoty/LICENSE.txt`](./public/models/syaoty/LICENSE.txt)와 [`MODEL_DISTRIBUTION_AUDIT.md`](./MODEL_DISTRIBUTION_AUDIT.md)에 기록했습니다.
 
 `public/motions/gene`의 CG-CA Gene 모션은 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)으로 제공됩니다. 세부 저작자 표시와 변경 내용은 [`public/motions/gene/ATTRIBUTION.txt`](./public/motions/gene/ATTRIBUTION.txt)에 있습니다.
 

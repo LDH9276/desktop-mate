@@ -1093,7 +1093,9 @@ class RigidBody {
 		// Renormalizing quaternion here because repeatedly transforming
 		// quaternion continuously accumulates floating point error and
 		// can end up being overflow. See #15335
-		this.bone.quaternion.copy( thQ2.multiply( thQ3 ).normalize() );
+		// world = parent * local, so local' = local * inverse(world) * desired.
+		// Reversing these factors twists chains when their parent is animated.
+		this.bone.quaternion.copy( thQ3.multiply( thQ2 ).normalize() );
 
 		manager.freeThreeQuaternion( thQ );
 		manager.freeThreeQuaternion( thQ2 );

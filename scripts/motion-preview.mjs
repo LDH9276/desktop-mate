@@ -18,7 +18,7 @@ try {
     await page.getByRole('button', { name: '모션 선택', exact: true }).click();
     await page.getByRole('button', { name, exact: true }).click();
   };
-  for (const [id] of process.argv.includes('--events-only') ? [] : [['mate', 'Mate']]) {
+  for (const [id] of process.argv.includes('--events-only') ? [] : [['syaoty', 'Syaoty']]) {
     await page.waitForSelector(`.avatar-renderer[data-model="${id}"][data-loaded="true"][data-motion-clips="${clipFiles.length}"]`, { timeout: 60000 });
     await page.waitForTimeout(1200); await shot(`${id}-idle`);
     await react('손 흔들기'); await page.waitForTimeout(1100); await shot(`${id}-wave`);
@@ -87,5 +87,5 @@ try {
   assert.deepEqual(errors, []);
   console.log(process.argv.includes('--events-only')
     ? 'GPT state UI passed: seven completed reply tags drive seven reactions; only mock bridge events were used.'
-    : 'Motion preview passed: original procedural Mate, seven emotions, VMD playback, drag/landing, completed GPT state events, no renderer errors. Only mock GPT events were used.');
+    : 'Motion preview passed: bundled CC0 Syaoty PMX, seven emotions, VMD playback, drag/landing, completed GPT state events, no renderer errors. Only mock GPT events were used.');
 } finally { await browser.close(); await server.close(); }

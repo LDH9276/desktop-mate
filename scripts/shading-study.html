@@ -1,0 +1,41 @@
+<!doctype html><meta charset="utf-8"><base href="/"><style>body{margin:0;background:#ddd9ce}canvas{display:block}</style><script type="module">
+import * as THREE from 'three';
+import {MMDLoader} from 'three/addons/loaders/MMDLoader.js';
+import {OutlineEffect} from '../src/vendor/PmxOutlineEffect.js';
+import {configurePmxMaterials} from '../src/pmx-materials.mjs';
+import {createMmdRig,createMmdGrantUpdater,mmdRotation} from '../src/motion-rig.mjs';
+import {composeMotion} from '../src/expressive-motion.mjs';
+const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setSize(1000,1100);renderer.setPixelRatio(1);document.body.append(renderer.domElement);
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const effect=new OutlineEffect(renderer),scene=new THREE.Scene();scene.background=new THREE.Color('#ddd9ce');
+const camera=new THREE.PerspectiveCamera(30,1000/1100,.01,30);camera.position.set(.18,1.66,1.85);camera.lookAt(0,1.60,0);camera.zoom=1.15;camera.updateProjectionMatrix();
+const ambient=new THREE.HemisphereLight(0xffffff,0xc3b4a3,2),key=new THREE.DirectionalLight(0xfff5e9,2.4),fill=new THREE.DirectionalLight(0xf0eeff,1.3);
+key.position.set(-2,4,5);fill.position.set(3,2,-3);scene.add(ambient,key,fill,key.target);key.target.position.set(0,1.4,0);
+key.shadow.mapSize.set(4096,4096);Object.assign(key.shadow.camera,{left:-1.1,right:1.1,top:1.1,bottom:-1.1,near:.1,far:12});key.shadow.bias=-.00003;key.shadow.normalBias=.002;
+let done;const textures=new Promise(r=>done=r),manager=new THREE.LoadingManager(()=>done());manager.onError=url=>{throw Error(url);};
+const mesh=await new MMDLoader(manager).loadAsync('/local-only/restricted-models/denia/red/model.pmx');await textures;configurePmxMaterials(mesh);
+const rig=createMmdRig(mesh),grants=createMmdGrantUpdater(mesh);
+const motion=composeMotion({state:'idle',elapsed:2,remaining:3,dragging:false,sway:0,reactionId:1},2,{x:.2,y:.05},false,new Map());
+for(const [name,q]of Object.entries(motion.targets)){const entry=rig.get(name);if(entry)entry.bone.quaternion.copy(mmdRotation(entry,q));}grants.update();
+mesh.updateMatrixWorld(true);const box=new THREE.Box3().setFromObject(mesh),scale=1.86/(box.max.y-box.min.y);mesh.scale.setScalar(scale);mesh.position.y=-box.min.y*scale;mesh.rotation.y=-.16;scene.add(mesh);
+const originals=mesh.material.map(m=>({emissive:m.emissive.clone(),gradientMap:m.gradientMap}));
+// Fur cards stay visible, but do not cast/receive rectangular self shadows.
+const furIndices=new Set(mesh.material.flatMap((m,i)=>/fur/i.test(m.name)?[i]:[]));
+const eyeIndices=new Set(mesh.material.flatMap((m,i)=>/eye/i.test(m.name)?[i]:[]));
+const unshadowedIndices=new Set([...furIndices,...eyeIndices]);
+const allGroups=mesh.geometry.groups.map(g=>({...g})),furGeometry=mesh.geometry.clone();
+mesh.geometry.clearGroups();furGeometry.clearGroups();
+for(const g of allGroups)(unshadowedIndices.has(g.materialIndex)?furGeometry:mesh.geometry).addGroup(g.start,g.count,g.materialIndex);
+const fur=new THREE.SkinnedMesh(furGeometry,[...mesh.material]);fur.bind(mesh.skeleton,mesh.bindMatrix);fur.position.copy(mesh.position);fur.quaternion.copy(mesh.quaternion);fur.scale.copy(mesh.scale);scene.add(fur);
+const ramp=new THREE.DataTexture(new Uint8Array([135,135,135,255,190,190,190,255,235,235,235,255,255,255,255,255]),4,1,THREE.RGBAFormat);ramp.minFilter=ramp.magFilter=THREE.NearestFilter;ramp.needsUpdate=true;
+for(const m of mesh.material){if(m.userData.outlineParameters){m.userData.outlineParameters.color=new THREE.Color('#634d60').toArray();m.userData.outlineParameters.thickness*=.6;}}
+window.materials=mesh.material.map((m,i)=>({i,name:m.name,alpha:m.transparent}));
+window.draw=shaded=>{
+ renderer.shadowMap.enabled=shaded;mesh.castShadow=mesh.receiveShadow=key.castShadow=shaded;
+ ambient.intensity=shaded?.9:2;ambient.color.set(shaded?'#c7ccef':'#ffffff');ambient.groundColor.set(shaded?'#bfa6b9':'#c3b4a3');
+ key.intensity=shaded?2.7:2.4;key.color.set(shaded?'#ffecd7':'#fff5e9');key.position.set(shaded?-3:-2,4,shaded?3:5);
+ fill.intensity=shaded?.65:1.3;fill.color.set(shaded?'#c5d8ff':'#f0eeff');
+ mesh.material.forEach((m,i)=>{m.emissive.copy(originals[i].emissive).multiplyScalar(shaded&&!unshadowedIndices.has(i)?.20:1);m.gradientMap=shaded&&!eyeIndices.has(i)?ramp:originals[i].gradientMap;m.needsUpdate=true;});
+ effect.render(scene,camera);return {materials:mesh.material.length,shadowMap:shaded?4096:0};
+};window.draw(false);document.body.dataset.ready='true';
+</script>

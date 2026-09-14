@@ -1,10 +1,12 @@
 <!doctype html><html><head><style>body{margin:0;background:#354656;overflow:hidden}canvas{display:block}</style></head><body><script type="module">
 import * as THREE from 'three';
 import { MMDLoader } from 'three/addons/loaders/MMDLoader.js';
+import { OutlineEffect } from '../src/vendor/PmxOutlineEffect.js';
 import { configurePmxMaterials } from '../src/pmx-materials.mjs';
 const query=new URLSearchParams(location.search), fixed=query.get('fixed')!=='false';
 const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true,premultipliedAlpha:fixed,preserveDrawingBuffer:true});
 renderer.setSize(900,1000); renderer.setClearColor(0,0);document.body.append(renderer.domElement);
+const outlineEffect=new OutlineEffect(renderer,{defaultThickness:.003,defaultColor:[.06,.06,.08],defaultAlpha:1});
 const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(29,.9,.1,100);
 window.checkCompositing=()=>{
   const target=new THREE.WebGLRenderTarget(16,16),testScene=new THREE.Scene(),testCamera=new THREE.OrthographicCamera(-1,1,1,-1,.1,10);testCamera.position.z=3;
@@ -27,7 +29,8 @@ const manager=new THREE.LoadingManager(); let mesh;
 manager.onLoad=()=>{
   if(!mesh)return;
   window.materialReport=mesh.material.map(m=>({name:m.name,map:m.map?.image?.src,transparent:m.transparent,depthWrite:m.depthWrite,alphaTest:m.alphaTest}));
-  window.draw=(angle=0)=>{mesh.rotation.y=angle;renderer.render(scene,camera);};
+  for(const material of mesh.material){const parameters=material.userData.outlineParameters;if(parameters)parameters.mateBaseThickness=parameters.thickness;}
+  window.draw=(angle=0,toon=false,scale=1,color='#343941')=>{mesh.rotation.y=angle;const outlineColor=new THREE.Color(color).toArray();for(const material of mesh.material){const parameters=material.userData.outlineParameters;if(parameters){parameters.thickness=parameters.mateBaseThickness*scale;parameters.color=outlineColor;}}toon?outlineEffect.render(scene,camera):renderer.render(scene,camera);};
   window.draw(Number(query.get('angle')||0));document.body.dataset.ready='true';
 };
 manager.onError=url=>{document.body.dataset.error=url;};

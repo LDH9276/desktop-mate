@@ -1,0 +1,33 @@
+<!doctype html><meta charset="utf-8"><base href="/"><style>body{margin:0;background:#e9ede8}</style><script type="module">
+import * as THREE from 'three';
+import {MMDLoader} from 'three/addons/loaders/MMDLoader.js';
+import {createMmdRig,createMmdGrantUpdater,mmdRotation} from '../src/motion-rig.mjs';
+import {composeMotion,createMotionClip} from '../src/expressive-motion.mjs';
+import {jointBlend} from '../src/motion.mjs';
+import {loadAmmo,createMmdPhysics} from '../src/mmd-physics.mjs';
+import {configurePmxMaterials} from '../src/pmx-materials.mjs';
+await loadAmmo();
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(700,850);document.body.append(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color('#e9ede8');scene.add(new THREE.HemisphereLight(0xffffff,0x9eaca0,1.4));
+const light=new THREE.DirectionalLight(0xffffff,1.8);light.position.set(-2,4,5);scene.add(light);
+const camera=new THREE.PerspectiveCamera(30,700/850,.01,100);camera.position.set(0,1.1,4.1);camera.lookAt(0,.98,0);
+let finish;const textures=new Promise(resolve=>finish=resolve),manager=new THREE.LoadingManager(()=>finish());
+const mesh=await new MMDLoader(manager).loadAsync(new URLSearchParams(location.search).get('model'));await textures;configurePmxMaterials(mesh);
+const rig=createMmdRig(mesh),grants=createMmdGrantUpdater(mesh);scene.add(mesh);
+const box=new THREE.Box3().setFromObject(mesh),scale=1.86/(box.max.y-box.min.y);mesh.scale.setScalar(scale);mesh.position.y=-box.min.y*scale;
+const clips=new Map();
+await new Promise((resolve,reject)=>new MMDLoader().loadVMD('/motions/gene/32_frustrated.vmd',v=>{clips.set('32_frustrated.vmd',createMotionClip('32_frustrated.vmd',v));resolve();},undefined,reject));
+window.study=(clothWeight,hairWeight,state='idle',dt=1/60)=>{
+ const physics=createMmdPhysics(mesh),bones=mesh.skeleton.bones;
+ const previous=bones.map(b=>b.quaternion.clone()),previousPosition=bones.map(b=>b.position.clone());let maximumJump=0,maximumPositionJump=0;const jumps=new Map(),positionJumps=new Map();
+ for(let frame=0;frame<480;frame++){
+  physics.restore();grants.restore();
+  const motion=composeMotion({state:state==='drag'?'idle':state,elapsed:state==='annoyed'?2:frame*dt,remaining:3,dragging:state==='drag',sway:state==='drag'?Math.sin(frame*dt*2)*.5:0,reactionId:1},frame*dt,{x:Math.sin(frame*dt/1.5)*.6,y:.1},false,clips);
+  for(const [name,q] of Object.entries(motion.targets)){const entry=rig.get(name);if(entry)entry.bone.quaternion.slerp(mmdRotation(entry,q),jointBlend(name,dt));}
+  grants.update();physics.update(dt,true,clothWeight,hairWeight);
+  bones.forEach((b,i)=>{if(![...b.position.toArray(),...b.quaternion.toArray()].every(Number.isFinite))throw Error(b.name);const jump=previous[i].angleTo(b.quaternion),p=b.position.distanceTo(previousPosition[i]);if(frame>360){maximumJump=Math.max(maximumJump,jump);maximumPositionJump=Math.max(maximumPositionJump,p);jumps.set(b.name,Math.max(jumps.get(b.name)||0,jump));positionJumps.set(b.name,Math.max(positionJumps.get(b.name)||0,p));}previous[i].copy(b.quaternion);previousPosition[i].copy(b.position);});
+ }
+ renderer.render(scene,camera);
+ const report={maximumJump,maximumPositionJump,topPositions:[...positionJumps].sort((a,b)=>b[1]-a[1]).slice(0,12),top:[...jumps].sort((a,b)=>b[1]-a[1]).slice(0,12),bodies:physics.bodyCount};physics.dispose();return report;
+};document.body.dataset.ready='true';
+</script>
