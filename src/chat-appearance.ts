@@ -1,3 +1,5 @@
+import { getPreference, setPreference } from './preferences';
+
 export const chatFontOptions = [
   { value: 'PyeojinGothic', label: '펴진고딕' },
   { value: 'system-ui', label: '시스템 고딕' },
@@ -69,7 +71,7 @@ const color = (value: unknown, fallback: string) => typeof value === 'string' &&
 export function loadChatAppearance(): ChatAppearance {
   const result = { ...defaultChatAppearance };
   try {
-    const saved = JSON.parse(localStorage.getItem('mate.chatAppearance') || '{}');
+    const saved = JSON.parse(getPreference('mate.chatAppearance') || '{}');
     for (const range of chatNumberRanges) {
       const value = saved?.[range.key];
       if (typeof value === 'number' && Number.isFinite(value)) result[range.key] = Math.min(range.max, Math.max(range.min, value));
@@ -81,5 +83,5 @@ export function loadChatAppearance(): ChatAppearance {
 }
 
 export function saveChatAppearance(value: ChatAppearance) {
-  localStorage.setItem('mate.chatAppearance', JSON.stringify(value));
+  setPreference('mate.chatAppearance', JSON.stringify(value));
 }

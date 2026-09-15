@@ -14,6 +14,9 @@ contextBridge.exposeInMainWorld('mate', {
   connect: (id, targetUrl) => ipcRenderer.invoke('mate:connect', id, targetUrl),
   disconnect: () => ipcRenderer.invoke('mate:disconnect'),
   send: text => ipcRenderer.invoke('mate:send', text),
+  preferences: () => ipcRenderer.invoke('mate:preferences'),
+  setPreference: (key, value) => ipcRenderer.invoke('mate:preference-set', key, value),
+  removePreference: key => ipcRenderer.invoke('mate:preference-remove', key),
   hide: () => ipcRenderer.invoke('mate:hide'),
   quit: () => ipcRenderer.invoke('mate:quit'),
   startDrag: kind => ipcRenderer.send('mate:drag-start', kind),
@@ -26,6 +29,7 @@ contextBridge.exposeInMainWorld('mate', {
   endDrag: () => ipcRenderer.send('mate:drag-end'),
   setRegions: regions => ipcRenderer.send('mate:regions', regions),
   onState: callback => subscribe('mate:state', callback),
+  onPreferenceChanged: callback => subscribe('mate:preference-changed', callback),
   onMotion: callback => subscribe('mate:motion', callback),
   onSettings: callback => subscribe('mate:settings', callback),
 });

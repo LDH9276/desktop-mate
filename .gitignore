@@ -2,6 +2,8 @@ node_modules/
 dist/
 release/
 portable-release/
+portable-release-built/
+voice-denia/
 .git/
 .env
 public/models/*
@@ -30,3 +32,5 @@ scripts/test-live-image-result.mjs
 scripts/test-live-service.mjs
 scripts/test-minimized-service.mjs
 scripts/test-packaged-service.mjs
+portable-release-public/
+portable-release-private/

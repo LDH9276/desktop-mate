@@ -1,3 +1,5 @@
+import { getPreference, setPreference } from './preferences';
+
 export type VisualSettings = {
   lighting: number;
   brightness: number;
@@ -29,12 +31,12 @@ const clampSetting = (key: keyof VisualSettings, value: unknown, fallback: numbe
 export function loadVisualSettings(): VisualSettings {
   const result = { ...defaultVisualSettings };
   try {
-    const saved = JSON.parse(localStorage.getItem('mate.visual') || '{}');
+    const saved = JSON.parse(getPreference('mate.visual') || '{}');
     for (const { key } of visualRanges) result[key] = clampSetting(key, saved?.[key], result[key]);
-    if (!localStorage.getItem('mate.visual')) {
+    if (!getPreference('mate.visual')) {
       // In 0.4.5 the single lighting slider controlled final-output
       // brightness. Carry that preference forward as the new brightness value.
-      const legacyRaw = localStorage.getItem('mate.lighting');
+      const legacyRaw = getPreference('mate.lighting');
       const legacy = legacyRaw === null ? Number.NaN : Number(legacyRaw);
       if (Number.isFinite(legacy)) result.brightness = clampSetting('brightness', legacy, result.brightness);
     }
@@ -43,5 +45,5 @@ export function loadVisualSettings(): VisualSettings {
 }
 
 export function saveVisualSettings(value: VisualSettings) {
-  localStorage.setItem('mate.visual', JSON.stringify(value));
+  setPreference('mate.visual', JSON.stringify(value));
 }

@@ -4,7 +4,7 @@
 
 [![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4?logo=windows)](https://www.microsoft.com/windows/)
 [![Node.js](https://img.shields.io/badge/Node.js-22%20LTS-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
-[![Version](https://img.shields.io/badge/version-0.6.11-6b8559)](./package.json)
+[![Version](https://img.shields.io/badge/version-0.7.2-6b8559)](./package.json)
 
 Mate는 화면 위에 항상 떠 있는 작은 캐릭터와 미니 채팅창을 제공합니다. 별도의 API 키를 입력하는 방식이 아니라, 사용자가 Chrome에 열어 둔 **일반 ChatGPT 대화 하나**를 Windows 접근성 기능으로 연결합니다.
 

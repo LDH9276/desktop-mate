@@ -4,7 +4,9 @@ export function physicsWeight(value, fallback = defaultPhysicsWeight) {
   const number = Number(value);
   return Number.isFinite(number) ? Math.max(0, Math.min(1, number)) : fallback;
 }
-export function loadPhysicsWeight(key) { return physicsWeight(localStorage.getItem(key)); }
+export function loadPhysicsWeight(key) {
+  return physicsWeight(localStorage.getItem(key));
+}
 
 // A hair strand needs its full joint/contact response. Do not confuse it with
 // a small head ornament just because both descend from the head bone.

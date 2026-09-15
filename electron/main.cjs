@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const { pathToFileURL } = require('node:url');
 const { ChatSession } = require('./bridge.cjs');
 const { ModelLibrary } = require('./model-library.cjs');
+const { PreferenceStore } = require('./preferences.cjs');
 protocol.registerSchemesAsPrivileged([{ scheme: 'mate-model', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }]);
 let modelLibrary, startupModels = Promise.resolve(), importingModel = false;
 
@@ -11,6 +12,7 @@ const { DEFAULT_SCALE, edges, validBounds, fitBounds, scaledBounds, reachableBou
 let companion, settingsWindow, tray, drag, pointerTimer, statusTimer, saveTimer, quitting = false, uiScale = 1, contentZoom = 1;
 let hitRegions = [], ignoresMouse = false;
 const session = new ChatSession();
+const preferences = new PreferenceStore(path.join(app.getPath('userData'), 'preferences.json'));
 const productionURL = pathToFileURL(path.join(__dirname, '../dist/index.html')).href;
 const appIcon = path.join(__dirname, '../dist/app-icon.png');
 const devURL = process.env.MATE_DEV_URL === 'http://127.0.0.1:5173' ? 'http://127.0.0.1:5173/' : null;
@@ -152,6 +154,19 @@ ipcMain.handle('mate:scan', (event, targetUrl) => { trusted(event); return sessi
 ipcMain.handle('mate:connect', (event, id, targetUrl) => { trusted(event); return session.connect(id, targetUrl); });
 ipcMain.handle('mate:disconnect', event => { trusted(event); return session.disconnect(); });
 ipcMain.handle('mate:send', (event, text) => { trusted(event); return session.send(text); });
+ipcMain.handle('mate:preferences', event => { trusted(event); return preferences.all(); });
+ipcMain.handle('mate:preference-set', (event, key, value) => {
+  trusted(event);
+  const saved = preferences.set(key, value);
+  broadcast('mate:preference-changed', key);
+  return saved;
+});
+ipcMain.handle('mate:preference-remove', (event, key) => {
+  trusted(event);
+  preferences.remove(key);
+  broadcast('mate:preference-changed', key);
+  return true;
+});
 ipcMain.handle('mate:hide', event => { trusted(event); stopDrag(); companion.hide(); });
 ipcMain.handle('mate:quit', event => { trusted(event); app.quit(); });
 ipcMain.handle('mate:window-state', event => { trusted(event); return windowState(); });

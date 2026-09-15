@@ -12,6 +12,9 @@ declare global {
       state(): Promise<ChatState>; scan(targetUrl?: string): Promise<ChatCandidate[]>;
       connect(id: number, targetUrl?: string): Promise<ChatState>; disconnect(): Promise<void>;
       send(text: string): Promise<ChatState>; hide(): Promise<void>; quit(): Promise<void>;
+      preferences(): Promise<Record<string, string>>;
+      setPreference(key: string, value: string): Promise<string>; removePreference(key: string): Promise<boolean>;
+      onPreferenceChanged(callback: (key: string) => void): () => void;
       startDrag(kind?: 'character' | 'window'): void; endDrag(): void;
       startResize(edge: ResizeEdge): void;
       windowState(): Promise<WindowState>; setWindowScale(scale: number): Promise<WindowState>;

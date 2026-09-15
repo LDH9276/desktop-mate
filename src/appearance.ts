@@ -1,4 +1,5 @@
 export type Appearance = { zoom: number; width: number; height: number; offsetY: number; rotation: number };
+import { getPreference } from './preferences';
 export const defaultAppearance: Appearance = { zoom: 1, width: 1, height: 1, offsetY: 0, rotation: 0 };
 export const appearanceRanges: { key: keyof Appearance; label: string; min: number; max: number; step: number; unit: '%' | '°' }[] = [
   { key: 'zoom', label: '캐릭터 크기', min: 0.5, max: 6, step: 0.01, unit: '%' },
@@ -27,7 +28,7 @@ export const appearancePresets: { label: string; value: Appearance }[] = [
 export function loadAppearance(id: string): Appearance {
   const result = { ...defaultAppearance };
   try {
-    const saved = JSON.parse(localStorage.getItem(`mate.appearance.${id}`) || '{}');
+    const saved = JSON.parse(getPreference(`mate.appearance.${id}`) || '{}');
     for (const { key, min, max } of appearanceRanges) {
       if (key === 'offsetY') continue;
       if (typeof saved?.[key] === 'number' && Number.isFinite(saved[key])) result[key] = Math.max(min, Math.min(max, saved[key]));
